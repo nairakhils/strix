@@ -11,6 +11,7 @@ import {
   outflowRate,
   overflowCoefficient,
   separationAt,
+  wakeTemperature,
 } from '../src/physics/envelope.js';
 import { envelopeText } from '../src/hud/hud.js';
 import { exampleDirector, exampleScene } from './scenes.mjs';
@@ -146,4 +147,12 @@ test('the envelope note names the outflow, the plunge and the ejecta', () => {
     '2.7 years since engulfment',
   ]);
   assert.deepEqual(envelopeText(null), []);
+});
+
+test('the wake behind the companion is a radiation-dominated strong shock', () => {
+  const model = exampleModel();
+  const a = 0.5 * model.radius;
+  const { density, speed2 } = model.late.local(a);
+  const pressure = (6 / 7) * density * (1.989e33 / 6.957e10 ** 3) * speed2 * 6.957e10 ** 2;
+  near((7.5657e-15 * wakeTemperature(model, a) ** 4) / 3, pressure, 1e-9, 'aT^4/3 = 6/7 rho v^2');
 });

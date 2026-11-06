@@ -263,7 +263,7 @@ export function donorMass(model, t) {
 
 export function wakeTemperature(model, a) {
   const { density, speed2 } = model.late.local(a);
-  return ((density * DENSITY * speed2 * SUN_RADIUS ** 2) / RADIATION) ** 0.25;
+  return ((18 / 7) * (density * DENSITY * speed2 * SUN_RADIUS ** 2) / RADIATION) ** 0.25;
 }
 
 export function gasTemperature(model, t) {
