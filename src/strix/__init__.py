@@ -1,4 +1,15 @@
 from strix.engine import render, view
-from strix.scene import SAMPLE_RATE, SYSTEMS, UNITS, read, read_field, write
+from strix.scene import KINDS, SAMPLE_RATE, STAGES, SYSTEMS, UNITS, read, read_field, write
 
-__all__ = ["SAMPLE_RATE", "SYSTEMS", "UNITS", "read", "read_field", "render", "view", "write"]
+__all__ = [
+    "KINDS",
+    "SAMPLE_RATE",
+    "STAGES",
+    "SYSTEMS",
+    "UNITS",
+    "read",
+    "read_field",
+    "render",
+    "view",
+    "write",
+]

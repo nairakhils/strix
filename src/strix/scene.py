@@ -9,11 +9,42 @@ VERSION = 2
 SAMPLE_RATE = 50
 ALIGNMENT = 8
 
-SYSTEMS = {"binary": {"time": "orbit", "length": "a", "mass": "M"}}
-UNITS = {"time": "time", "a": "length", "e": "", "m1": "mass", "m2": "mass"}
+SYSTEMS = {
+    "binary": {"time": "orbit", "length": "a", "mass": "M"},
+    "solar": {"time": "Myr", "length": "Rsun", "mass": "Msun"},
+}
+UNITS = {
+    "time": "time",
+    "a": "length",
+    "e": "",
+    "m1": "mass",
+    "m2": "mass",
+    "r1": "length",
+    "r2": "length",
+    "teff1": "K",
+    "teff2": "K",
+    "kind1": "",
+    "kind2": "",
+    "type1": "",
+    "type2": "",
+    "spin1": "Omega/Omega_crit",
+    "spin2": "Omega/Omega_crit",
+    "wind1": "Msun/yr",
+    "wind2": "Msun/yr",
+    "transfer": "Msun/yr",
+    "stage": "",
+    "label": "",
+}
 REQUIRED = ("time", "a", "e", "m1", "m2")
+TEXT = ("kind1", "kind2", "type1", "type2", "stage", "label")
+KINDS = ("point", "star", "WD", "NS", "BH", "none")
+STAGES = ("", "transfer", "envelope")
+STATE = ("time", "m1", "m2", "a", "teff1", "teff2")
+ORBIT = ("time", "m1", "m2", "a", "e")
+ENVELOPE = (*ORBIT, "r1", "r2", "teff1", "teff2")
 FIELD_KEYS = ("maps", "extents", "range", "mach", "softening")
 MEDIA = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg"}
+DTYPES = {"float64": "<f8", "uint16": "<u2", "uint8": "u1"}
 
 
 def aligned(size):
@@ -30,14 +61,61 @@ def check_columns(columns):
     lengths = {len(values) for values in columns.values()}
     if len(lengths) != 1:
         raise ValueError("columns differ in length")
+    for name, allowed in (("kind1", KINDS), ("kind2", KINDS), ("stage", STAGES)):
+        wrong = sorted(set(map(str, columns.get(name, ()))) - set(allowed))
+        if wrong:
+            raise ValueError(f"{name} has unknown values: {', '.join(wrong)}")
     return lengths.pop()
 
 
 def check_units(units, scale):
     if units not in SYSTEMS:
         raise ValueError(f"units must be one of {', '.join(SYSTEMS)}")
-    if scale is None or not (set(scale) == {"length", "mass"} and min(scale.values()) > 0):
+    if (units == "binary") != (scale is not None):
+        raise ValueError("binary units need a scale, solar units take none")
+    if scale is not None and not (set(scale) == {"length", "mass"} and min(scale.values()) > 0):
         raise ValueError("scale must give positive length and mass")
+
+
+def check_state(state, where, keys=STATE):
+    missing = [key for key in keys if key not in state]
+    if missing:
+        raise ValueError(f"{where} is missing {', '.join(missing)}")
+
+
+def check_span(event, samples):
+    first, last = event["during"]
+    if not 0 <= first <= last <= event["until"] < samples:
+        raise ValueError(f"{event['kind']} samples out of order: {first}, {last}, {event['until']}")
+
+
+def check_events(events, samples):
+    for event in events:
+        kind = event["kind"]
+        if kind == "transfer":
+            if event["donor"] not in (1, 2):
+                raise ValueError(f"donor must be 1 or 2, not {event['donor']}")
+            keys = STATE
+        elif kind == "collapse":
+            if event["star"] not in (1, 2):
+                raise ValueError(f"star must be 1 or 2, not {event['star']}")
+            keys = ORBIT
+        elif kind == "envelope":
+            if event["donor"] not in (1, 2):
+                raise ValueError(f"donor must be 1 or 2, not {event['donor']}")
+            keys = ENVELOPE
+        else:
+            raise ValueError(f"unknown event kind: {kind}")
+        check_span(event, samples)
+        check_state(event["start"], f"{kind} start", keys)
+        check_state(event["end"], f"{kind} end", keys)
+
+
+def encode(name, values, strings):
+    if name in TEXT:
+        indices = [strings.setdefault(str(value), len(strings)) for value in values]
+        return "uint16", np.asarray(indices, DTYPES["uint16"])
+    return "float64", np.asarray(values, DTYPES["float64"])
 
 
 def field_folder(path):
@@ -106,9 +184,12 @@ def write(
     columns,
     *,
     units,
-    scale,
+    scale=None,
     rate=SAMPLE_RATE,
+    events=(),
     fields=None,
+    palette=None,
+    types=None,
     sky=None,
     assets=None,
     source=None,
@@ -116,10 +197,12 @@ def write(
     assets = dict(assets or {})
     samples = check_columns(columns)
     check_units(units, scale)
+    check_events(events, samples)
     if not rate > 0:
         raise ValueError("rate must be positive")
     if sky is not None and sky not in assets:
         raise ValueError(f"sky asset {sky} not found")
+    strings = {}
     blobs = []
     entries = []
     offset = 0
@@ -131,10 +214,9 @@ def write(
         offset = aligned(offset + len(blob))
 
     for name, values in columns.items():
+        dtype, array = encode(name, values, strings)
         unit = SYSTEMS[units].get(UNITS[name], UNITS[name])
-        place(
-            {"name": name, "dtype": "float64", "units": unit}, np.asarray(values, "<f8").tobytes()
-        )
+        place({"name": name, "dtype": dtype, "units": unit}, array.tobytes())
     column_count = len(entries)
     for name, data in assets.items():
         place({"name": name, "type": media_type(name)}, bytes(data))
@@ -146,9 +228,13 @@ def write(
         "rate": rate,
         "units": units,
         "scale": scale,
+        "strings": list(strings),
         "columns": entries[:column_count],
         "assets": entries[column_count:],
+        "events": list(events),
         "fields": None if fields is None else write_fields(path, samples, fields),
+        "palette": palette,
+        "types": types,
         "sky": sky,
         "source": source,
     }
@@ -171,10 +257,18 @@ def read(path):
     if header.get("format") != FORMAT or header.get("version") != VERSION:
         raise ValueError(f"{path} is not a strix {VERSION} file")
     start = aligned(4 + length)
-    columns = {
-        column["name"]: np.frombuffer(data, "<f8", header["samples"], start + column["offset"])
-        for column in header["columns"]
-    }
+    strings = header["strings"]
+    columns = {}
+    for column in header["columns"]:
+        values = np.frombuffer(
+            data,
+            DTYPES[column["dtype"]],
+            header["samples"],
+            start + column["offset"],
+        )
+        columns[column["name"]] = (
+            [strings[index] for index in values] if column["name"] in TEXT else values
+        )
     assets = {
         asset["name"]: data[start + asset["offset"] : start + asset["offset"] + asset["length"]]
         for asset in header["assets"]
