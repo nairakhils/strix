@@ -6,7 +6,7 @@ import {
   diffusionSeconds,
   ejectaDrift,
   ejectaSpeed,
-  escapeSpeed,
+  hyperbolicExcess,
   explosionEnergy,
   hyperbolicAnomaly,
   orbitState,
@@ -172,11 +172,11 @@ test('the failed collapse in example 0 needs no kick and keeps the orbit', () =>
 });
 
 test('the unbound pair keeps the hyperbola it was given at the kick', () => {
-  near(escapeSpeed(1, -1), Math.sqrt(6.674e-8 * 1.989e33 / 6.957e10) / 1e5, 1e-9, 'unit escape speed');
+  near(hyperbolicExcess(1, -1), Math.sqrt(6.674e-8 * 1.989e33 / 6.957e10) / 1e5, 1e-9, 'unit speed at infinity');
   const cinematic = exampleDirector(2);
   const event = collapsesOf(2).find(({ end }) => end.a < 0);
   const { end } = event;
-  const expected = escapeSpeed(end.m1 + end.m2, end.a);
+  const expected = hyperbolicExcess(end.m1 + end.m2, end.a);
   for (let u = event.during[0]; u < cinematic.frameCount; u += 37) {
     const { hud } = cinematic.stateAt(u);
     near(hud.a, end.a, 1e-9, `a at ${u}`);

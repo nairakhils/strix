@@ -30,7 +30,7 @@ import { applyCollapses, collapseEpisodes } from './collapse.js';
 import {
   afterCollapse,
   ejectaDrift,
-  escapeSpeed,
+  hyperbolicExcess,
   hyperbolicPosition,
   orbitState,
   diffusionSeconds,
@@ -642,7 +642,7 @@ export function makeDirector(scene, { log: logScale = false, camera = 'fixed' } 
         angle: Math.min(SHADOW_WIDEN * Math.asin(Math.min(radii[other][before] / separation, 1)), SHADOW_LIMIT),
       }
       : null;
-    const next = collapses.find((other) => other.first > episode.first)?.first ?? frameCount;
+    const next = collapses.find((later) => later.first > episode.first)?.first ?? frameCount;
     if (post.bound) {
       offsets.fill(post.anomaly - moment, episode.first, next);
       apses.fill(post.apse, episode.first, next);
@@ -667,7 +667,7 @@ export function makeDirector(scene, { log: logScale = false, camera = 'fixed' } 
     const { run, post, mass } = outcome;
     if (!run || !post || post.bound) return;
     const episode = collapses[k];
-    run.escape = { k, a: post.a, e: post.e, apse: post.apse, anomaly: post.anomaly, motion: post.motion, speed: escapeSpeed(mass, post.a) };
+    run.escape = { k, a: post.a, e: post.e, apse: post.apse, anomaly: post.anomaly, motion: post.motion, speed: hyperbolicExcess(mass, post.a) };
     let end = episode.first;
     const runEnd = Math.min(runOf.lastIndexOf(run), episode.until);
     while (end < runEnd && Math.hypot(...escapeRelative(run.escape, end)) < ESCAPE_REACH * outcome.separation) end += 1;
@@ -867,7 +867,6 @@ export function makeDirector(scene, { log: logScale = false, camera = 'fixed' } 
     return open - BLAST_SETTLE * Math.max(tau - timing.turn, 0);
   }
 
-  const cloudLog = (u) => blastLog(u);
 
   function coveredLog(u, usual) {
     const k = commons.findLastIndex((episode) => episode.first <= u);
@@ -1221,7 +1220,7 @@ export function makeDirector(scene, { log: logScale = false, camera = 'fixed' } 
       fov: LINEAR_FOV,
       focus: m,
       near: NEAR * distance,
-      far: 10 * distance + 4 + (4 * Math.max(extent(s, g), Math.exp(cloudLog(s.u)), Math.exp(envelopeLog(s.u)))) / unit,
+      far: 10 * distance + 4 + (4 * Math.max(extent(s, g), Math.exp(blastLog(s.u)), Math.exp(envelopeLog(s.u)))) / unit,
       scale: !g.run && c >= 0.5
         ? { position: toWorld(g.centre, g.focus, unit), caption: CENTRE_CAPTION }
         : { position: toWorld(g.positions[k], g.focus, unit), caption: `at star ${k + 1}` },
@@ -1467,7 +1466,7 @@ export function makeDirector(scene, { log: logScale = false, camera = 'fixed' } 
     const m = log ? 0 : lerp(shows, i, s.t);
     const unit = log
       ? PX_PER_UNIT
-      : Math.exp(coveredLog(u, softMax(framingAt(framed, u, Math.max(framingLog(s, g, w, c, m), panLog(g, lerp(slopes, i, s.t)))), cloudLog(u))));
+      : Math.exp(coveredLog(u, softMax(framingAt(framed, u, Math.max(framingLog(s, g, w, c, m), panLog(g, lerp(slopes, i, s.t)))), blastLog(u))));
     const azimuth = fixed ? AZIMUTH0 : AZIMUTH0 + DRIFT * pace.timeAt(u);
     const explosion = explosionAt(s, g, unit);
     const envelope = envelopeAt(s, g, unit);

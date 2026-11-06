@@ -96,7 +96,7 @@ function elements(position, velocity, mu) {
   return { a, e, apse, anomaly, bound: e < 1, motion: Math.sqrt(mu / Math.abs(a) ** 3) };
 }
 
-export function escapeSpeed(mass, a) {
+export function hyperbolicExcess(mass, a) {
   return Math.sqrt((MU_SUN * mass) / Math.abs(a)) * KM_PER_RSUN;
 }
 

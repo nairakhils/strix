@@ -3,7 +3,6 @@ import { PROFILE_SAMPLES, WIND_REACH, profileTable, scatteredShare } from '../ph
 import { WIND_CLUMPS } from '../director/director.js';
 
 export const FAINTEST_WIND = 1e-3;
-export const WIND_COMPRESSION = 1;
 
 function makeHaze(stage, shaders, plane, profile, share) {
   const material = new THREE.ShaderMaterial({
@@ -17,7 +16,6 @@ function makeHaze(stage, shaders, plane, profile, share) {
       profile: { value: profile },
       flow: { value: 0 },
       blur: { value: 0 },
-      compression: { value: WIND_COMPRESSION },
       outward: { value: WIND_CLUMPS },
       share: { value: share },
     },

@@ -208,7 +208,7 @@ export function makeTransfer(stage, shaders, emission) {
       }
       const full = lowest + seeds.spread[i] * (outer - lowest);
       const young = ring * Math.exp(RING_WIDTH * seeds.ring[i]);
-      const r = Math.min(Math.exp(Math.log(young) + grown * (Math.log(full) - Math.log(young))), outer);
+      const r = Math.min(young * (full / young) ** grown, outer);
       const spin = Math.sqrt(share / (r * r * r)) - 1;
       radius[i] = r;
       angle[i] = birth === null ? (seeds.start[i] + spin * time) % TWO_PI : (impact + spin * (time - birth)) % TWO_PI;
