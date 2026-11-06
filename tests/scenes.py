@@ -5,7 +5,7 @@ import numpy as np
 
 import strix
 
-OUT = Path(__file__).resolve().parents[1] / "web" / "tests" / "scenes"
+OUT = Path(__file__).resolve().parents[1] / "src" / "strix" / "web" / "tests" / "scenes"
 NUMBERS = ("time", "a", "e", "m1", "m2", "r1", "r2", "teff1", "teff2", "spin1", "spin2")
 NUMBERS += ("wind1", "wind2", "period1", "period2", "field1", "field2")
 LINEAR = ("time", "e", "m1", "m2")

@@ -1,21 +1,30 @@
 import shutil
 import socket
 import subprocess
+import sys
 import time
 import webbrowser
 from pathlib import Path
 from urllib.parse import urlencode
 
-WEB = Path(__file__).resolve().parents[2] / "web"
+WEB = Path(__file__).resolve().parent / "web"
 SCALES = ("linear", "log")
 CAMERAS = ("fixed", "follow")
+
+
+def install():
+    npm = shutil.which("npm")
+    if npm is None:
+        raise RuntimeError("strix needs npm to set up its web engine")
+    print("strix: setting up the web engine, once", file=sys.stderr)
+    subprocess.run([npm, "ci", "--no-audit", "--no-fund", "--loglevel=error"], cwd=WEB, check=True)
 
 
 def node(tool, *arguments):
     if shutil.which("node") is None:
         raise RuntimeError("strix needs Node.js to show or render a scene")
     if not (WEB / "node_modules").is_dir():
-        raise RuntimeError(f"run npm install in {WEB} first")
+        install()
     return ["node", str(WEB / "tools" / tool), *map(str, arguments)]
 
 
