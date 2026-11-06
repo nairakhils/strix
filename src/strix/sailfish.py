@@ -104,7 +104,7 @@ def resample(product, extents=EXTENTS, pixels=PIXELS):
 
 
 def ceiling(product, extent):
-    preview = resample(product, (extent,), PREVIEW)
+    preview = resample(product, (extent,), PREVIEW).astype(float)
     return float(np.percentile(preview[preview > EMPTY], LEVEL))
 
 
