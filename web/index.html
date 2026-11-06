@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>strix</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="style.css">
+<script type="importmap">{ "imports": { "three": "./node_modules/three/build/three.module.js", "three/addons/": "./node_modules/three/examples/jsm/" } }</script>
+</head>
+<body>
+<div id="stage"></div>
+<div id="controls">
+  <button id="play" type="button">Play</button>
+  <input id="scrub" type="range" min="0" max="0" step="1" value="0">
+  <span id="frame-label"></span>
+  <button id="follow" type="button">Follow</button>
+</div>
+<script type="module" src="src/main.js"></script>
+</body>
+</html>

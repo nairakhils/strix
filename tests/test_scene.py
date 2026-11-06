@@ -5,6 +5,7 @@ import numpy as np
 import pytest
 
 import strix
+from strix.cli import parse_arguments
 
 SCALE = {"length": 30.0, "mass": 1.0}
 
@@ -134,3 +135,12 @@ def test_missing_columns_are_named(tmp_path):
 def test_sky_must_be_an_asset(tmp_path):
     with pytest.raises(ValueError, match="sky asset"):
         write(tmp_path / "run.strix", orbit(), sky="sky.png")
+
+
+def test_command_line():
+    shown = parse_arguments(["view", "run.strix"])
+    assert (shown.command, shown.port) == ("view", 0)
+    rendered = parse_arguments(
+        ["render", "run.strix", "run.mp4", "--width", "1280", "--height", "720"]
+    )
+    assert (rendered.command, rendered.width, rendered.height) == ("render", 1280, 720)
