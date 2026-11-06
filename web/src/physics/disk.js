@@ -1,14 +1,5 @@
 import { eggleton } from './roche.js';
-
-const GRAVITY = 6.674e-8;
-const STEFAN = 5.6704e-5;
-const LIGHT = 2.99792458e10;
-const BOLTZMANN = 1.380649e-16;
-const HYDROGEN_MASS = 1.6735e-24;
-const SUN_MASS = 1.989e33;
-const SUN_RADIUS = 6.957e10;
-const YEAR = 3.15576e7;
-const SUN_LUMINOSITY = 3.828e33;
+import { BOLTZMANN, GRAVITY, HYDROGEN_MASS, LIGHT, STEFAN, SUN_LUMINOSITY, SUN_MASS, SUN_RADIUS, YEAR } from './units.js';
 
 export const ELECTRON_OPACITY = 0.34;
 export const MEAN_MOLECULAR_WEIGHT = 0.6;

@@ -1,9 +1,7 @@
 import { MU_SUN, plateauSeconds } from './collapse.js';
 import { eggleton } from './roche.js';
+import { RADIATION, SUN_MASS, SUN_RADIUS } from './units.js';
 
-const SUN_MASS = 1.989e33;
-const SUN_RADIUS = 6.957e10;
-const RADIATION = 7.5657e-15;
 const DENSITY = SUN_MASS / SUN_RADIUS ** 3;
 
 export const POLYTROPE = 1.5;

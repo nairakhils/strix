@@ -16,6 +16,7 @@ import {
 import { luminosity, surfaceTemperature } from '../physics/light.js';
 import { accretedFraction, transferTrack } from '../physics/transfer.js';
 import { outflowDepth } from '../physics/wind.js';
+import { KM_PER_RSUN } from '../physics/units.js';
 import { clamp, smoothstep } from './blend.js';
 
 export const DETACH_FROM = 0.95;
@@ -25,7 +26,7 @@ export const OVERFLOW_FROM = 0.98;
 export const ASSUMED_RATE = 1e-3;
 export const MIN_LAUNCH = 1e-3;
 export const ISCO_RADII = 3;
-export const NS_RADIUS = 10 / 6.957e5;
+export const NS_RADIUS = 10 / KM_PER_RSUN;
 export const COOLEST_DISK = 3000;
 export const MIN_ASPECT = 0.01;
 export const MAX_ASPECT = 0.2;

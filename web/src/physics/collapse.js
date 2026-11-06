@@ -1,10 +1,5 @@
 import { eccentricAnomaly } from './kepler.js';
-
-const GRAVITY = 6.674e-8;
-const SUN_MASS = 1.989e33;
-const SUN_RADIUS = 6.957e10;
-const KM_PER_RSUN = 695700;
-const LIGHT_SPEED = 2.998e10;
+import { DAY, GRAVITY, KM_PER_RSUN, LIGHT, SUN_MASS, SUN_RADIUS } from './units.js';
 
 export const MU_SUN = (GRAVITY * SUN_MASS) / SUN_RADIUS ** 3;
 export const SUPERNOVA_ENERGY = 1e51;
@@ -18,7 +13,6 @@ export const ARNETT_BETA = 13.8;
 export const HYDROGEN_RICH = 0.5;
 export const HYDROGEN_TRACE = 0.01;
 export const HELIUM_TRACE = 0.14;
-const DAY = 86400;
 
 export function explosionEnergy(ejected) {
   return ejected < FAILED_EJECTA ? FAILED_ENERGY : SUPERNOVA_ENERGY;
@@ -37,7 +31,7 @@ export function plateauSeconds(ejected, radius, energy = explosionEnergy(ejected
 export function diffusionSeconds(ejected, energy = explosionEnergy(ejected)) {
   if (!(ejected > 0)) return 0;
   const speed = ejectaSpeed(ejected, energy) * SUN_RADIUS;
-  return Math.sqrt((2 * OPACITY * ejected * SUN_MASS) / (ARNETT_BETA * LIGHT_SPEED * speed));
+  return Math.sqrt((2 * OPACITY * ejected * SUN_MASS) / (ARNETT_BETA * LIGHT * speed));
 }
 
 export function supernovaType({ hydrogen, helium }) {

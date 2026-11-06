@@ -1,7 +1,6 @@
 import { logScaledRadius } from '../director/scaling.js';
+import { KM_PER_RSUN, RSUN_PER_AU } from '../physics/units.js';
 
-const RSUN_PER_AU = 215.032;
-const KM_PER_RSUN = 695700;
 const DESIGN_HEIGHT = 1080;
 const SCALE_TARGET = 220;
 const LABEL_OFFSET = 10;

@@ -1,4 +1,4 @@
-export const AU_RSUN = 215.032;
+import { RSUN_PER_AU } from './units.js';
 
 const clamp = (value, lo, hi) => Math.min(Math.max(value, lo), hi);
 
@@ -39,5 +39,5 @@ export function barycentric(x, y, m1, m2) {
 }
 
 export function orbitalPeriodYears(a, m) {
-  return Math.sqrt((a / AU_RSUN) ** 3 / m);
+  return Math.sqrt((a / RSUN_PER_AU) ** 3 / m);
 }

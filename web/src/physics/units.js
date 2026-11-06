@@ -1,0 +1,15 @@
+export const GRAVITY = 6.674e-8;
+export const LIGHT = 2.99792458e10;
+export const STEFAN = 5.6704e-5;
+export const RADIATION = 7.5657e-15;
+export const BOLTZMANN = 1.380649e-16;
+export const HYDROGEN_MASS = 1.6735e-24;
+export const PROTON_MASS = 1.67262e-24;
+export const THOMSON = 6.6524587e-25;
+export const SUN_MASS = 1.989e33;
+export const SUN_RADIUS = 6.957e10;
+export const SUN_LUMINOSITY = 3.828e33;
+export const YEAR = 3.15576e7;
+export const DAY = 86400;
+export const KM_PER_RSUN = 695700;
+export const RSUN_PER_AU = 215.032;

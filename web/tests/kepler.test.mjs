@@ -1,12 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  AU_RSUN,
   barycentric,
   eccentricAnomaly,
   orbitalPeriodYears,
   relativeOrbit,
 } from '../src/physics/kepler.js';
+import { RSUN_PER_AU } from '../src/physics/units.js';
 
 function wrapped(angle) {
   return Math.atan2(Math.sin(angle), Math.cos(angle));
@@ -55,6 +55,6 @@ test('pericentre on +x, counter-clockwise and faster', () => {
 });
 
 test('orbital period of one AU around one solar mass', () => {
-  assert.equal(orbitalPeriodYears(AU_RSUN, 1), 1);
-  assert.ok(Math.abs(orbitalPeriodYears(4 * AU_RSUN, 4) - 4) < 1e-12);
+  assert.equal(orbitalPeriodYears(RSUN_PER_AU, 1), 1);
+  assert.ok(Math.abs(orbitalPeriodYears(4 * RSUN_PER_AU, 4) - 4) < 1e-12);
 });

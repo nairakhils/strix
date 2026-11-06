@@ -208,7 +208,7 @@ test('the supernova type follows the layers left on the progenitor', () => {
 
 test('stripped ejecta peak on the Arnett diffusion time', () => {
   const speed = Math.sqrt((10 * 1e51) / (3 * 2.5 * 1.989e33));
-  const expected = Math.sqrt((2 * 0.07 * 2.5 * 1.989e33) / (13.8 * 2.998e10 * speed));
+  const expected = Math.sqrt((2 * 0.07 * 2.5 * 1.989e33) / (13.8 * 2.99792458e10 * speed));
   near(diffusionSeconds(2.5, 1e51), expected, 1e-12, 'reference');
   near(diffusionSeconds(10, 1e51) / diffusionSeconds(2.5, 1e51), 4 ** 0.75, 1e-12, 'mass');
   near(diffusionSeconds(2.5, 16e51) / diffusionSeconds(2.5, 1e51), 0.5, 1e-12, 'energy');

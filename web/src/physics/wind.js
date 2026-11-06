@@ -1,9 +1,4 @@
-const GRAVITY = 6.674e-8;
-const SUN_MASS = 1.989e33;
-const SUN_RADIUS = 6.957e10;
-const YEAR = 3.15576e7;
-const THOMSON = 6.6524587e-25;
-const PROTON_MASS = 1.67262e-24;
+import { GRAVITY, PROTON_MASS, SUN_MASS, SUN_RADIUS, THOMSON, YEAR } from './units.js';
 
 export const ELECTRON_MOLECULAR_WEIGHT = 1.2;
 export const LAUNCH_SPEED = 0.01;

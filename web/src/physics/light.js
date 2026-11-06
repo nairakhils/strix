@@ -1,3 +1,5 @@
+import { BOLTZMANN, GRAVITY, HYDROGEN_MASS, SUN_MASS, SUN_RADIUS } from './units.js';
+
 export const SUN_TEFF = 5772;
 export const LUMINANCE_CONTRAST = 0.5;
 
@@ -9,11 +11,6 @@ const APPROX_U2_BASE = 0.13;
 const APPROX_U2_RISE = [0.12, 3.77, 0.06];
 const APPROX_U2_PEAK = [0.152, 4, 0.286];
 
-const GRAVITY = 6.674e-8;
-const SUN_MASS = 1.989e33;
-const SUN_RADIUS = 6.957e10;
-const BOLTZMANN = 1.380649e-16;
-const HYDROGEN_MASS = 1.6735e-24;
 const MEAN_MOLECULAR_WEIGHT = 0.6;
 
 const clamp = (value, lo, hi) => Math.min(Math.max(value, lo), hi);

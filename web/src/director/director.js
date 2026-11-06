@@ -50,6 +50,7 @@ import {
   separationAt,
   wakeTemperature,
 } from '../physics/envelope.js';
+import { KM_PER_RSUN, YEAR } from '../physics/units.js';
 import { unitsOf } from './units.js';
 
 export { TAU } from './framing.js';
@@ -129,7 +130,6 @@ export const FRAME_ASPECT = 16 / 9;
 export const TRANSFER_SHARE = 0.55;
 export const WIND_CLUMPS = 1.5;
 export const WIND_PERIOD = 16;
-export const YEAR_SECONDS = 3.15576e7;
 export const FOLLOW_GAIN = 0.04;
 export const MAX_TURN = 0.02;
 export const FAR_START = 1;
@@ -463,7 +463,7 @@ export function makeDirector(scene, { log: logScale = false, camera = 'fixed' } 
     const lead = episode.speed > 0 ? (START_REACH * reach) / episode.speed : 0;
     const growth = lead > 0 && end > 0 ? Math.log1p(end / lead) / span : 0;
     const period = episode.boundBefore
-      ? orbitalPeriodYears(elemA[before], masses[0][before] + masses[1][before]) * YEAR_SECONDS
+      ? orbitalPeriodYears(elemA[before], masses[0][before] + masses[1][before]) * YEAR
       : null;
     const slow = period ? period / ORBIT_SECONDS : growth * (lead + end);
     return { progenitor, separation, reach, widest, start, span, end, lead, growth, slow, turn: FADE_FROM * span };
@@ -585,7 +585,7 @@ export function makeDirector(scene, { log: logScale = false, camera = 'fixed' } 
     }
     const blast = blastAt(i + t);
     if (!blast || blast.weight <= 0 || status[i] === 'disrupted') return usual;
-    const period = orbitalPeriodYears(elemA[i], masses[0][i] + masses[1][i]) * YEAR_SECONDS;
+    const period = orbitalPeriodYears(elemA[i], masses[0][i] + masses[1][i]) * YEAR;
     const physical = Math.min((2 * Math.PI * blastRate(blast.index, i + t) * pace.paceAt(i + t)) / period, ceiling);
     return usual + (physical - usual) * blast.weight;
   }
@@ -680,9 +680,9 @@ export function makeDirector(scene, { log: logScale = false, camera = 'fixed' } 
   }
 
   function secondsPerFrame(i, t) {
-    if (status[i] === 'disrupted') return Math.max(myr[i + 1] - myr[i], 0) * 1e6 * YEAR_SECONDS;
+    if (status[i] === 'disrupted') return Math.max(myr[i + 1] - myr[i], 0) * 1e6 * YEAR;
     const period = orbitalPeriodYears(lerp(elemA, i, t), lerp(masses[0], i, t) + lerp(masses[1], i, t));
-    return (rate(i, t) * period * YEAR_SECONDS) / (2 * Math.PI);
+    return (rate(i, t) * period * YEAR) / (2 * Math.PI);
   }
 
   const travels = [0, 1].map((k) => integrate((i, t) => (kinds[k][i] === 'star'
@@ -1079,7 +1079,7 @@ export function makeDirector(scene, { log: logScale = false, camera = 'fixed' } 
     const tau = Math.max(commonSeconds(near, s.u), 0);
     const left = smoothstep(clamp((timing.engulf - tau) / STREAM_FADE, 0, 1));
     if (left <= 0 || donor !== commons[near].donor) return null;
-    const rate = outflowRate(model, timing.clock(tau)) * YEAR_SECONDS;
+    const rate = outflowRate(model, timing.clock(tau)) * YEAR;
     return { index: null, episode: null, donor, since: Infinity, after: null, stream: onset * left, disk: onset * left, rate };
   }
 
@@ -1401,11 +1401,11 @@ export function makeDirector(scene, { log: logScale = false, camera = 'fixed' } 
       donor,
       companion: kinds[1 - donor][first],
       stage: t < model.engulfed ? 'runaway' : t < model.finish ? 'plunge' : 'ejected',
-      rate: outflowRate(model, t) * YEAR_SECONDS,
+      rate: outflowRate(model, t) * YEAR,
       lost: model.donor - donorMass(model, Math.min(t, model.engulfed)),
       ejected: ejectedMass(model, t),
       envelope: model.envelope,
-      speed: model.speed * 695700,
+      speed: model.speed * KM_PER_RSUN,
       until: model.engulfed - t,
       since: t - model.engulfed,
       temperature: gasTemperature(model, t),
@@ -1445,7 +1445,7 @@ export function makeDirector(scene, { log: logScale = false, camera = 'fixed' } 
     return {
       star: episode.star,
       ejected: episode.ejected,
-      speed: episode.speed * 695700,
+      speed: episode.speed * KM_PER_RSUN,
       failed: episode.failed,
       type: episode.type,
       kick: outcome.kick,
