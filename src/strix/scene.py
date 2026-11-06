@@ -39,9 +39,9 @@ REQUIRED = ("time", "a", "e", "m1", "m2")
 TEXT = ("kind1", "kind2", "type1", "type2", "stage", "label")
 KINDS = ("point", "star", "WD", "NS", "BH", "none")
 STAGES = ("", "transfer", "envelope")
-STATE = ("time", "m1", "m2", "a", "teff1", "teff2")
 ORBIT = ("time", "m1", "m2", "a", "e")
-ENVELOPE = (*ORBIT, "r1", "r2", "teff1", "teff2")
+STARS = (*ORBIT, "r1", "r2", "teff1", "teff2")
+EVENTS = {"transfer": ("donor", STARS), "collapse": ("star", ORBIT), "envelope": ("donor", STARS)}
 FIELD_KEYS = ("maps", "extents", "range", "mach", "softening")
 MEDIA = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg"}
 DTYPES = {"float64": "<f8", "uint16": "<u2", "uint8": "u1"}
@@ -77,7 +77,7 @@ def check_units(units, scale):
         raise ValueError("scale must give positive length and mass")
 
 
-def check_state(state, where, keys=STATE):
+def check_state(state, where, keys):
     missing = [key for key in keys if key not in state]
     if missing:
         raise ValueError(f"{where} is missing {', '.join(missing)}")
@@ -92,20 +92,11 @@ def check_span(event, samples):
 def check_events(events, samples):
     for event in events:
         kind = event["kind"]
-        if kind == "transfer":
-            if event["donor"] not in (1, 2):
-                raise ValueError(f"donor must be 1 or 2, not {event['donor']}")
-            keys = STATE
-        elif kind == "collapse":
-            if event["star"] not in (1, 2):
-                raise ValueError(f"star must be 1 or 2, not {event['star']}")
-            keys = ORBIT
-        elif kind == "envelope":
-            if event["donor"] not in (1, 2):
-                raise ValueError(f"donor must be 1 or 2, not {event['donor']}")
-            keys = ENVELOPE
-        else:
+        if kind not in EVENTS:
             raise ValueError(f"unknown event kind: {kind}")
+        role, keys = EVENTS[kind]
+        if event[role] not in (1, 2):
+            raise ValueError(f"{role} must be 1 or 2, not {event[role]}")
         check_span(event, samples)
         check_state(event["start"], f"{kind} start", keys)
         check_state(event["end"], f"{kind} end", keys)

@@ -17,6 +17,21 @@ test('example 2: the orbit follows the transfer track between its end states', (
   assert.ok(dip < start.a, `orbit shrinks near q = 1 first (${dip})`);
 });
 
+test('a lobe-filling donor keeps the luminosity the scene gives it', () => {
+  for (const index of [0, 1, 2]) {
+    const { table, cinematic } = load(index);
+    for (const { donor, during: [first, last], start, end } of table.header.events.filter((e) => e.kind === 'transfer')) {
+      const light = (r, teff) => r * r * (teff / 5772) ** 4;
+      const bounds = [start, end].map((state) => light(state[`r${donor}`], state[`teff${donor}`]));
+      for (let u = first; u <= last; u += 0.5) {
+        const state = cinematic.stateAt(u);
+        const shown = light(state.hud[`r${donor}`], state.stars[donor - 1].teff);
+        assert.ok(shown > 0.99 * Math.min(...bounds) && shown < 1.01 * Math.max(...bounds), `example ${index} at ${u}: ${shown}`);
+      }
+    }
+  }
+});
+
 test('example 2: the donor fills its lobe while it transfers', () => {
   const { cinematic } = load(2);
   for (let u = 204; u <= 246; u += 3) {

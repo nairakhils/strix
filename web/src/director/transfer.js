@@ -12,6 +12,7 @@ import {
   tidalRadius,
   viscousYears,
 } from '../physics/disk.js';
+import { luminosity, surfaceTemperature } from '../physics/light.js';
 import { accretedFraction, transferTrack } from '../physics/transfer.js';
 import { clamp, smoothstep } from './blend.js';
 
@@ -50,6 +51,7 @@ export function transferEpisodes(events = []) {
       years,
       accreted: accretedFraction(ends),
       streamTeff: start[`teff${donor}`],
+      light: [start, end].map((state) => Math.log(luminosity(state[`r${donor}`], state[`teff${donor}`]))),
       track: transferTrack(ends),
       ...ends,
     };
@@ -60,9 +62,10 @@ export function episodeProgress(episode, donorMass) {
   return clamp((episode.md0 - donorMass) / (episode.md0 - episode.md1), 0, 1);
 }
 
-export function applyTransfers(episodes, { masses, radii, elemA, status }) {
+export function applyTransfers(episodes, { masses, radii, teffs, elemA, status }) {
   for (const episode of episodes) {
     const d = episode.donor;
+    const [early, late] = episode.light;
     for (let n = episode.first; n <= episode.last; n += 1) {
       if (status[n] === 'disrupted') continue;
       const x = episodeProgress(episode, masses[d][n]);
@@ -71,6 +74,7 @@ export function applyTransfers(episodes, { masses, radii, elemA, status }) {
       const lobe = eggleton(masses[d][n] / masses[1 - d][n]) * a;
       const detach = smoothstep(clamp((x - DETACH_FROM) / (1 - DETACH_FROM), 0, 1));
       radii[d][n] = lobe + (radii[d][n] - lobe) * detach;
+      teffs[d][n] = surfaceTemperature(Math.exp(early + (late - early) * x), radii[d][n]);
     }
   }
 }

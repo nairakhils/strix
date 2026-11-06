@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { determineScale, logScaledRadius } from '../src/director/scaling.js';
 import { TAU_SETTLE } from '../src/director/framing.js';
 import { BLAST_SETTLE, FLOOR_LABEL, HERO_SHARE, makeDirector } from '../src/director/director.js';
-import { paletteColour } from '../src/physics/light.js';
+import { luminosity, paletteColour, surfaceTemperature } from '../src/physics/light.js';
 import { blackbodyPalette } from '../src/physics/blackbody.js';
 import { eggleton, lagrangeL1, shapeLevel, sphereGrid, surfaceOnGrid } from '../src/physics/roche.js';
 import { exampleDirector as cinematicFor, exampleScene as readTable } from './scenes.mjs';
@@ -19,7 +19,7 @@ function modelledAt({ header }, n) {
 }
 
 function overriddenAt({ header }, n) {
-  return header.events.some(({ kind, during: [first, last] }) => kind !== 'transfer' && n >= first && n <= last);
+  return header.events.some(({ during: [first, last] }) => n >= first && n <= last);
 }
 
 function assertNear(actual, expected, tolerance, label) {
@@ -106,12 +106,21 @@ for (const index of [0, 1, 2]) {
       for (let n = 0; n < frameCount; n += 1) {
         if (overriddenAt(scene, n)) continue;
         const state = cinematic.stateAt(n);
-        state.stars.forEach((star, k) => assert.deepEqual(star.rgb, paletteColour(palette, teffs[k][n])));
+        state.stars.forEach((star, k) => {
+          assertNear(star.teff, teffs[k][n], 1e-12 * teffs[k][n], `temperature at ${n}`);
+          assert.deepEqual(star.rgb, paletteColour(palette, star.teff));
+        });
       }
       for (let i = 0; i < frameCount - 1; i += 7) {
         if (modelledAt(scene, i) || modelledAt(scene, i + 1)) continue;
         const state = cinematic.stateAt(i + 0.5);
         const mid = (values) => (values[i] + values[i + 1]) / 2;
+        const radii = [columns.r1, columns.r2];
+        const shine = (k) => {
+          const r = mid(radii[k]);
+          if (!(r > 0)) return mid(teffs[k]);
+          return surfaceTemperature((luminosity(radii[k][i], teffs[k][i]) + luminosity(radii[k][i + 1], teffs[k][i + 1])) / 2, r);
+        };
         assert.equal(state.frame, i);
         assert.deepEqual(state.hud.types, [types[0][i], types[1][i]]);
         assert.equal(state.hud.event, columns.label[i]);
@@ -123,15 +132,14 @@ for (const index of [0, 1, 2]) {
           [state.hud.m2, columns.m2],
           [state.hud.r1, columns.r1],
           [state.hud.r2, columns.r2],
-          [state.stars[0].teff, columns.teff1],
-          [state.stars[1].teff, columns.teff2],
         ];
         for (const [actual, values] of pairs) {
           assertNear(actual, mid(values), 1e-12 * Math.max(1, Math.abs(mid(values))), `midpoint at ${i}`);
         }
         state.stars.forEach((star, k) => {
+          assertNear(star.teff, shine(k), 1e-9 * shine(k), `temperature at ${i}`);
           assert.equal(star.type, types[k][i]);
-          assert.deepEqual(star.rgb, paletteColour(palette, mid(teffs[k])));
+          assert.deepEqual(star.rgb, paletteColour(palette, star.teff));
         });
       }
     });

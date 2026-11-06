@@ -33,6 +33,14 @@ function locate(nodes, value) {
   return [lo, (value - nodes[lo]) / (nodes[lo + 1] - nodes[lo])];
 }
 
+export function luminosity(radius, teff) {
+  return radius * radius * (teff / SUN_TEFF) ** 4;
+}
+
+export function surfaceTemperature(luminosity, radius) {
+  return SUN_TEFF * Math.sqrt(Math.sqrt(luminosity) / radius);
+}
+
 export function paletteColour({ temperature, rgb }, teff) {
   const t = Math.log(teff);
   let k = 0;

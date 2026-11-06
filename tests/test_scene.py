@@ -46,7 +46,8 @@ def binary(samples=5):
 
 
 def transfer(**changes):
-    state = {"time": 0.0, "m1": 12.0, "m2": 8.0, "a": 30.0, "teff1": 28000.0, "teff2": 22000.0}
+    orbit = {"time": 0.0, "m1": 12.0, "m2": 8.0, "a": 30.0, "e": 0.0}
+    state = {**orbit, "r1": 9.0, "r2": 4.0, "teff1": 28000.0, "teff2": 22000.0}
     event = {
         "kind": "transfer",
         "donor": 1,

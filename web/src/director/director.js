@@ -3,8 +3,10 @@ import {
   approximateLimbDarkening,
   granulation,
   linearColour,
+  luminosity,
   makeLight,
   paletteColour,
+  surfaceTemperature,
   unitLuminance,
 } from '../physics/light.js';
 import { blackbodyPalette } from '../physics/blackbody.js';
@@ -391,7 +393,7 @@ export function makeDirector(scene, { log: logScale = false, camera = 'fixed' } 
   const weights = episodeWeights(Uint8Array.from(stage, (name) => (name ? 1 : 0)));
   const { status, elemA, elemE, runs, runOf } = binaryStatus({ a, e, masses, radii }, frameCount);
   const transfers = transferEpisodes(header.events);
-  applyTransfers(transfers, { masses, radii, elemA, status });
+  applyTransfers(transfers, { masses, radii, teffs, elemA, status });
   const transferOf = transferFrames(transfers, frameCount);
   const stops = transfers.map((episode) => stopFrame(episode, masses));
   const masks = stageMasks(stage, kinds, frameCount);
@@ -525,6 +527,7 @@ export function makeDirector(scene, { log: logScale = false, camera = 'fixed' } 
       }
     }
   });
+  const lights = radii.map((values, k) => Float64Array.from(values, (r, n) => luminosity(r, teffs[k][n])));
 
   function commonTurn(k, u) {
     const { model } = commons[k];
@@ -727,6 +730,7 @@ export function makeDirector(scene, { log: logScale = false, camera = 'fixed' } 
 
   function plainSample(i, t) {
     const at = (values) => lerp(values, i, edges[i] ? 0 : t);
+    const radius = radii.map(at);
     return {
       i,
       j: Math.min(i + 1, last),
@@ -745,8 +749,8 @@ export function makeDirector(scene, { log: logScale = false, camera = 'fixed' } 
       shift: edges[i] ? [0, 0] : shiftAt(i + t),
       weight: at(weights),
       mass: masses.map(at),
-      radius: radii.map(at),
-      teff: teffs.map(at),
+      radius,
+      teff: radius.map((r, k) => (r > 0 ? surfaceTemperature(at(lights[k]), r) : at(teffs[k]))),
     };
   }
 
