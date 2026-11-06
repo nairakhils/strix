@@ -150,13 +150,13 @@ def scene(text, types, events):
     stage = [""] * samples
     rates = np.zeros(samples)
     written = []
-    for kind, who, (first, last), until in events:
+    for kind, who, (first, last), until, layers in events:
         before, after = states[first], states[last + 1]
         labels[first : last + 1] = [EVENTS[kind]] * (last - first + 1)
         span = {"during": [first, last], "until": until}
         if kind == "collapse":
             ends = {"start": orbit(before), "end": orbit(after)}
-            written.append({"kind": kind, "star": who, **span, **ends})
+            written.append({"kind": kind, "star": who, **layers, **span, **ends})
             continue
         ends = {"start": stars(before), "end": stars(after)}
         written.append({"kind": kind, "donor": who, **span, **ends})
@@ -184,11 +184,11 @@ def stable():
         [(0, "MS"), (770, "HG"), (920, "HeMS"), (1080, "HeHG"), (1230, "BH")],
     ]
     events = [
-        ("transfer", 1, (94, 203), 203),
-        ("transfer", 1, (310, 359), 420),
-        ("collapse", 1, (620, 669), 719),
-        ("transfer", 2, (870, 919), 980),
-        ("collapse", 2, (1180, 1229), 1279),
+        ("transfer", 1, (94, 203), 203, None),
+        ("transfer", 1, (310, 359), 420, None),
+        ("collapse", 1, (620, 669), 719, {"hydrogen": 0.0, "helium": 4.4}),
+        ("transfer", 2, (870, 919), 980, None),
+        ("collapse", 2, (1180, 1229), 1279, {"hydrogen": 0.0, "helium": 3.6}),
     ]
     return scene(STABLE, types, events)
 
@@ -199,10 +199,10 @@ def envelope():
         [(0, "MS"), (810, "HG"), (910, "CHeB"), (1160, "HeMS"), (1380, "HeHG"), (1530, "BH")],
     ]
     events = [
-        ("transfer", 1, (350, 399), 460),
-        ("collapse", 1, (660, 709), 759),
-        ("envelope", 2, (1110, 1159), 1305),
-        ("collapse", 2, (1480, 1529), 1579),
+        ("transfer", 1, (350, 399), 460, None),
+        ("collapse", 1, (660, 709), 759, {"hydrogen": 0.0, "helium": 3.1}),
+        ("envelope", 2, (1110, 1159), 1305, None),
+        ("collapse", 2, (1480, 1529), 1579, {"hydrogen": 0.0, "helium": 3.3}),
     ]
     return scene(ENVELOPE, types, events)
 
@@ -213,9 +213,9 @@ def unbound():
         [(0, "MS"), (660, "HG"), (760, "CHeB"), (1360, "EAGB"), (1510, "BH")],
     ]
     events = [
-        ("transfer", 1, (200, 249), 310),
-        ("collapse", 1, (510, 559), 609),
-        ("collapse", 2, (1460, 1509), 1559),
+        ("transfer", 1, (200, 249), 310, None),
+        ("collapse", 1, (510, 559), 609, {"hydrogen": 0.0, "helium": 1.32}),
+        ("collapse", 2, (1460, 1509), 1559, {"hydrogen": 11.6, "helium": 2.3}),
     ]
     return scene(UNBOUND, types, events)
 

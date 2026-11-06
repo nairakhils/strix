@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   COOLING_TEMPERATURE,
   afterCollapse,
+  diffusionSeconds,
   ejectaSpeed,
   escapeSpeed,
   explosionEnergy,
@@ -10,6 +11,7 @@ import {
   orbitState,
   plateauSeconds,
   shockTemperature,
+  supernovaType,
 } from '../src/physics/collapse.js';
 import { CORE_BREAK, OUTER_SLOPE, ejectaDensity } from '../src/physics/ejecta.js';
 import { AZIMUTH0, BLAST_ZOOM, FIXED_ELEVATION } from '../src/director/director.js';
@@ -174,12 +176,30 @@ test('the fixed camera keeps one bearing and elevation for the whole movie', () 
   }
 });
 
+test('the supernova type follows the layers left on the progenitor', () => {
+  assert.equal(supernovaType({ hydrogen: 11.6, helium: 2.3 }), 'II');
+  assert.equal(supernovaType({ hydrogen: 0.1, helium: 2.3 }), 'IIb');
+  assert.equal(supernovaType({ hydrogen: 0, helium: 3.1 }), 'Ib');
+  assert.equal(supernovaType({ hydrogen: 0, helium: 0.05 }), 'Ic');
+  const types = [0, 1, 2].flatMap((index) => collapsesOf(index).map((event) => supernovaType(event)));
+  assert.deepEqual(types, ['Ib', 'Ib', 'Ib', 'Ib', 'Ib', 'II']);
+});
+
+test('stripped ejecta peak on the Arnett diffusion time', () => {
+  const speed = Math.sqrt((10 * 1e51) / (3 * 2.5 * 1.989e33));
+  const expected = Math.sqrt((2 * 0.07 * 2.5 * 1.989e33) / (13.8 * 2.998e10 * speed));
+  near(diffusionSeconds(2.5, 1e51), expected, 1e-12, 'reference');
+  near(diffusionSeconds(10, 1e51) / diffusionSeconds(2.5, 1e51), 4 ** 0.75, 1e-12, 'mass');
+  near(diffusionSeconds(2.5, 16e51) / diffusionSeconds(2.5, 1e51), 0.5, 1e-12, 'energy');
+});
+
 test('the collapse note names the remnant, the ejecta and what happened to the orbit', () => {
   const note = {
     star: 0,
     ejected: 2.564,
     speed: 7712,
     failed: false,
+    type: 'Ib',
     kick: 0,
     boundBefore: true,
     boundAfter: true,
@@ -188,7 +208,7 @@ test('the collapse note names the remnant, the ejecta and what happened to the o
     since: 3 * DAY,
   };
   assert.deepEqual(collapseText(note), [
-    'star 1 explodes, leaving a NS; 2.56 M☉ ejected at 7710 km/s',
+    'star 1 explodes as a type Ib supernova, leaving a NS; 2.56 M☉ ejected at 7710 km/s',
     'mass loss alone, no kick; orbit stays bound, e = 0.06',
     '3.0 days after core collapse',
   ]);

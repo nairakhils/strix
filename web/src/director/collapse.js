@@ -1,11 +1,11 @@
-import { ejectaSpeed, explosionEnergy, FAILED_EJECTA } from '../physics/collapse.js';
+import { ejectaSpeed, explosionEnergy, FAILED_EJECTA, supernovaType } from '../physics/collapse.js';
 
 const boundOrbit = ({ a, e }) => a > 0 && e >= 0 && e < 1;
 
 export function collapseEpisodes(events = []) {
   return events
     .filter((event) => event.kind === 'collapse')
-    .map(({ star, during, until, start, end }) => {
+    .map(({ star, during, until, start, end, hydrogen, helium }) => {
       const k = star - 1;
       const mass = (state) => (k === 0 ? state.m1 : state.m2);
       const ejected = Math.max(mass(start) - mass(end), 0);
@@ -18,6 +18,7 @@ export function collapseEpisodes(events = []) {
         after: end,
         ejected,
         failed: ejected < FAILED_EJECTA,
+        type: supernovaType({ hydrogen, helium }),
         energy: explosionEnergy(ejected),
         speed: ejectaSpeed(ejected),
         boundBefore: boundOrbit(start),

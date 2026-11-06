@@ -194,6 +194,8 @@ def collapse(**changes):
     event = {
         "kind": "collapse",
         "star": 1,
+        "hydrogen": 0.0,
+        "helium": 1.3,
         "during": [1, 3],
         "until": 4,
         "start": state,
@@ -213,6 +215,9 @@ def test_collapse_events(tmp_path):
             binary(),
             events=[collapse(end={"time": 1.0, "m1": 1.4, "m2": 8.0, "a": 30.0})],
         )
+    bare = {key: value for key, value in collapse().items() if key != "hydrogen"}
+    with pytest.raises(ValueError, match="collapse is missing hydrogen"):
+        write(tmp_path / "run.strix", binary(), events=[bare])
 
 
 def envelope(**changes):

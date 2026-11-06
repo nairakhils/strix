@@ -41,7 +41,11 @@ KINDS = ("point", "star", "WD", "NS", "BH", "none")
 STAGES = ("", "transfer", "envelope")
 ORBIT = ("time", "m1", "m2", "a", "e")
 STARS = (*ORBIT, "r1", "r2", "teff1", "teff2")
-EVENTS = {"transfer": ("donor", STARS), "collapse": ("star", ORBIT), "envelope": ("donor", STARS)}
+EVENTS = {
+    "transfer": ("donor", STARS, ()),
+    "collapse": ("star", ORBIT, ("hydrogen", "helium")),
+    "envelope": ("donor", STARS, ()),
+}
 FIELD_KEYS = ("maps", "extents", "range", "mach", "softening")
 MEDIA = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg"}
 DTYPES = {"float64": "<f8", "uint16": "<u2", "uint8": "u1"}
@@ -94,9 +98,10 @@ def check_events(events, samples):
         kind = event["kind"]
         if kind not in EVENTS:
             raise ValueError(f"unknown event kind: {kind}")
-        role, keys = EVENTS[kind]
+        role, keys, fields = EVENTS[kind]
         if event[role] not in (1, 2):
             raise ValueError(f"{role} must be 1 or 2, not {event[role]}")
+        check_state(event, kind, fields)
         check_span(event, samples)
         check_state(event["start"], f"{kind} start", keys)
         check_state(event["end"], f"{kind} end", keys)

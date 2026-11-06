@@ -32,6 +32,7 @@ import {
   escapeSpeed,
   hyperbolicPosition,
   orbitState,
+  diffusionSeconds,
   plateauSeconds,
   rotate,
   shockTemperature,
@@ -82,6 +83,7 @@ export const GLARE_ADAPTATION = 1;
 export const SHADOW_WIDEN = 1.4;
 export const SHADOW_LIMIT = Math.PI / 3;
 export const PLATEAU_TEMPERATURE = 5000;
+export const STRIPPED_TEMPERATURE = 7000;
 export const ENVELOPE_SECONDS = 18;
 export const ENVELOPE_ORBIT_SECONDS = 2;
 export const SWAP_SECONDS = 0.8;
@@ -448,17 +450,19 @@ export function makeDirector(scene, { log: logScale = false, camera = 'fixed' } 
     const reach = Math.max(separation, progenitor, 1e-3);
     const start = pace.timeAt(episode.first);
     const span = pace.timeAt(episode.last + 1) - start;
-    const plateau = plateauSeconds(episode.ejected, progenitor, episode.energy);
+    const photosphere = episode.type === 'II'
+      ? plateauSeconds(episode.ejected, progenitor, episode.energy)
+      : diffusionSeconds(episode.ejected, episode.energy);
     const frame = Math.max(separation * (1 + e[before]), 3 * Math.max(radii[0][before], radii[1][before]), progenitor);
     const widest = BLAST_ZOOM * frame;
-    const end = Math.min(plateau, Math.max(EJECTA_EXIT * widest - progenitor, 0) / episode.speed);
+    const end = Math.min(photosphere, Math.max(EJECTA_EXIT * widest - progenitor, 0) / episode.speed);
     const lead = episode.speed > 0 ? (START_REACH * reach) / episode.speed : 0;
     const growth = lead > 0 && end > 0 ? Math.log1p(end / lead) / span : 0;
     const period = episode.boundBefore
       ? orbitalPeriodYears(elemA[before], masses[0][before] + masses[1][before]) * YEAR_SECONDS
       : null;
     const slow = period ? period / ORBIT_SECONDS : growth * (lead + end);
-    return { progenitor, separation, reach, plateau, widest, start, span, end, lead, growth, slow, turn: FADE_FROM * span };
+    return { progenitor, separation, reach, widest, start, span, end, lead, growth, slow, turn: FADE_FROM * span };
   });
 
   const engulfments = commons.map((episode) => {
@@ -1317,7 +1321,8 @@ export function makeDirector(scene, { log: logScale = false, camera = 'fixed' } 
       : g.positions[episode.star];
     const size = (value) => (log ? ell(value) : value) / unit;
     const { shadow } = outcome;
-    const shocked = clamp(shockTemperature(blast.progenitor, seconds), PLATEAU_TEMPERATURE, SHOCK_TEMPERATURE);
+    const floor = episode.type === 'II' ? PLATEAU_TEMPERATURE : STRIPPED_TEMPERATURE;
+    const shocked = clamp(shockTemperature(blast.progenitor, seconds), floor, SHOCK_TEMPERATURE);
     const temperature = shocked * (1 - FADE_COOLING * thinning);
     const glare = Math.max(light.surfaceBrightness(temperature), light.surfaceBrightness(SHOCK_TEMPERATURE) * Math.exp(-since / GLARE_SECONDS));
     return {
@@ -1429,6 +1434,7 @@ export function makeDirector(scene, { log: logScale = false, camera = 'fixed' } 
       ejected: episode.ejected,
       speed: episode.speed * 695700,
       failed: episode.failed,
+      type: episode.type,
       kick: outcome.kick,
       boundBefore: episode.boundBefore,
       boundAfter: episode.boundAfter,

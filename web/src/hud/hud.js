@@ -117,7 +117,7 @@ export function collapseText(collapse) {
   const ejecta = `${fixed2(collapse.ejected)} M☉ ejected at ${speedText(collapse.speed)}`;
   const first = collapse.failed
     ? `${star} collapses to a ${collapse.remnant}; failed supernova, ${ejecta}`
-    : `${star} explodes, leaving a ${collapse.remnant}; ${ejecta}`;
+    : `${star} explodes as a type ${collapse.type} supernova, leaving a ${collapse.remnant}; ${ejecta}`;
   const clock = `${elapsedText(collapse.since)} after core collapse`;
   if (!collapse.boundBefore) return [first, clock];
   const kick = collapse.kick > 1 ? `minimum kick ${speedText(collapse.kick)}` : 'mass loss alone, no kick';

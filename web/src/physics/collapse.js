@@ -4,6 +4,7 @@ const GRAVITY = 6.674e-8;
 const SUN_MASS = 1.989e33;
 const SUN_RADIUS = 6.957e10;
 const KM_PER_RSUN = 695700;
+const LIGHT_SPEED = 2.998e10;
 
 export const MU_SUN = (GRAVITY * SUN_MASS) / SUN_RADIUS ** 3;
 export const SUPERNOVA_ENERGY = 1e51;
@@ -12,6 +13,11 @@ export const FAILED_EJECTA = 0.5;
 export const PLATEAU_DAYS = 99;
 export const COOLING_TEMPERATURE = 2.5e4;
 export const COOLING_SLOPE = 0.45;
+export const OPACITY = 0.07;
+export const ARNETT_BETA = 13.8;
+export const HYDROGEN_RICH = 0.5;
+export const HYDROGEN_TRACE = 0.01;
+export const HELIUM_TRACE = 0.14;
 const DAY = 86400;
 
 export function explosionEnergy(ejected) {
@@ -26,6 +32,18 @@ export function ejectaSpeed(ejected, energy = explosionEnergy(ejected)) {
 export function plateauSeconds(ejected, radius, energy = explosionEnergy(ejected)) {
   if (!(ejected > 0)) return 0;
   return PLATEAU_DAYS * DAY * Math.sqrt(ejected / 10) * (radius / 500) ** (1 / 6) * (energy / 1e51) ** (-1 / 6);
+}
+
+export function diffusionSeconds(ejected, energy = explosionEnergy(ejected)) {
+  if (!(ejected > 0)) return 0;
+  const speed = ejectaSpeed(ejected, energy) * SUN_RADIUS;
+  return Math.sqrt((2 * OPACITY * ejected * SUN_MASS) / (ARNETT_BETA * LIGHT_SPEED * speed));
+}
+
+export function supernovaType({ hydrogen, helium }) {
+  if (hydrogen >= HYDROGEN_RICH) return 'II';
+  if (hydrogen >= HYDROGEN_TRACE) return 'IIb';
+  return helium >= HELIUM_TRACE ? 'Ib' : 'Ic';
 }
 
 export function shockTemperature(radius, seconds) {
