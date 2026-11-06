@@ -399,7 +399,7 @@ export function makeDirector(scene, { log: logScale = false, camera = 'fixed' } 
   const weights = episodeWeights(Uint8Array.from(stage, (name) => (name ? 1 : 0)));
   const { status, elemA, elemE, runs, runOf } = binaryStatus({ a, e, masses, radii }, frameCount);
   const transfers = transferEpisodes(header.events);
-  const swollen = applyTransfers(transfers, { masses, radii, teffs, kinds, elemA, status });
+  const shells = applyTransfers(transfers, { masses, radii, teffs, kinds, elemA, status });
   const transferOf = transferFrames(transfers, frameCount);
   const stops = transfers.map((episode) => stopFrame(episode, masses));
   const masks = stageMasks(stage, kinds, frameCount);
@@ -730,6 +730,7 @@ export function makeDirector(scene, { log: logScale = false, camera = 'fixed' } 
       elemA: state.a,
       elemE: state.e,
       mass: state.mass,
+      body: state.radius,
       radius: state.radius,
       teff: state.teff,
       common: k,
@@ -738,14 +739,16 @@ export function makeDirector(scene, { log: logScale = false, camera = 'fixed' } 
 
   function plainSample(i, t) {
     const at = (values) => lerp(values, i, edges[i] ? 0 : t);
-    const radius = radii.map(at);
+    const body = radii.map(at);
+    const shell = shells.map(({ radius }) => at(radius));
+    const radius = body.map((r, k) => Math.max(r, shell[k]));
     return {
       i,
       j: Math.min(i + 1, last),
       t,
       u: i + t,
       status: status[i],
-      kinds: [0, 1].map((k) => (swollen[k][i] ? 'star' : kinds[k][i])),
+      kinds: [kinds[0][i], kinds[1][i]],
       time: at(time),
       a: at(a),
       e: at(e),
@@ -757,13 +760,19 @@ export function makeDirector(scene, { log: logScale = false, camera = 'fixed' } 
       shift: edges[i] ? [0, 0] : shiftAt(i + t),
       weight: at(weights),
       mass: masses.map(at),
+      body,
       radius,
-      teff: radius.map((r, k) => (r > 0 ? surfaceTemperature(at(lights[k]), r) : at(teffs[k]))),
+      teff: radius.map((r, k) => {
+        if (!(r > 0)) return at(teffs[k]);
+        return surfaceTemperature(shell[k] > body[k] ? at(shells[k].light) : at(lights[k]), r);
+      }),
     };
   }
 
+  const shownKind = (s, k) => (shells[k].radius[s.i] > 0 ? 'star' : s.kinds[k]);
+
   function floored(s, natural) {
-    const floors = natural.map((r, k) => log && s.kinds[k] === 'star' && r < RADIUS_FLOOR);
+    const floors = natural.map((r, k) => log && shownKind(s, k) === 'star' && r < RADIUS_FLOOR);
     return { radii: natural.map((r, k) => (floors[k] ? RADIUS_FLOOR : r)), floors };
   }
 
@@ -1220,7 +1229,7 @@ export function makeDirector(scene, { log: logScale = false, camera = 'fixed' } 
   }
 
   function starState(k, s, g, unit, exposure) {
-    const kind = s.kinds[k];
+    const kind = shownKind(s, k);
     const teff = s.teff[k];
     const fill = g.fills ? g.fills[k] : null;
     const shaped = kind === 'star' && fill !== null;
@@ -1279,7 +1288,7 @@ export function makeDirector(scene, { log: logScale = false, camera = 'fixed' } 
     const presence = presenceAt(s, g);
     if (!presence || (presence.stream <= 0 && presence.disk <= 0)) return null;
     const { index, episode, x, since, after, stream, disk } = presence;
-    const shared = { kinds: s.kinds, masses: s.mass, radii: s.radius, a: s.elemA };
+    const shared = { kinds: s.kinds, masses: s.mass, radii: s.body, a: s.elemA };
     const timing = index === null ? null : timings[index];
     let geometry;
     let flow;
@@ -1501,7 +1510,7 @@ export function makeDirector(scene, { log: logScale = false, camera = 'fixed' } 
         a: (g.run?.escape ? g.run.escape.a : modelled(transfer) ? s.elemA : s.a) / units.rsun,
         e: g.run?.escape ? g.run.escape.e : s.e,
         escape: g.run?.escape ? g.run.escape.speed : null,
-        modelled: modelled(transfer) ? [0, 1].filter((k) => k === transfer.donor || swollen[k][s.i]) : [],
+        modelled: modelled(transfer) ? [0, 1].filter((k) => k === transfer.donor || shells[k].radius[s.i] > 0) : [],
         flow: transfer && transfer.presence.stream > 0 && !commonNote ? transfer.flow : null,
         m1: s.mass[0] / units.msun,
         m2: s.mass[1] / units.msun,

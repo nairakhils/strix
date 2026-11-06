@@ -89,17 +89,18 @@ test('example 2: the disk is born from the stream, built over an arc of the orbi
   assert.ok(later.outer > first.outer);
 });
 
-test('mass the accretor cannot keep swells it into an outflow photosphere filling its lobe', () => {
+test('mass the accretor cannot keep swells it into an outflow photosphere inside its lobe', () => {
   for (const [index, accretor, frames] of [[0, 0, [880, 900, 915]], [1, 1, [360, 380]]]) {
     const { cinematic } = load(index);
     for (const u of frames) {
       const state = cinematic.stateAt(u);
       const fill = state.stars[accretor].shape?.fill;
       assert.equal(state.stars[accretor].kind, 'star', `example ${index} at ${u}`);
-      assert.ok(Math.abs(fill - 1) < 0.01, `example ${index} at ${u}: fill ${fill}`);
+      assert.ok(Math.abs(fill - 0.9) < 0.01, `example ${index} at ${u}: fill ${fill}`);
       assert.deepEqual(state.hud.modelled, [0, 1]);
     }
   }
+  for (const u of [880, 900, 915]) assert.ok(load(0).cinematic.stateAt(u).transfer.disk, `black-hole disk at ${u}`);
   const kept = load(2).cinematic.stateAt(225);
   assert.deepEqual(kept.hud.modelled, [0]);
   assert.ok(kept.stars[1].shape === null || kept.stars[1].shape.fill < 0.9);

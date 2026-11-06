@@ -12,6 +12,7 @@ import {
   viscousYears,
 } from '../src/physics/disk.js';
 import { outflowDepth, scatteringDepth } from '../src/physics/wind.js';
+import { outflowPhotosphere } from '../src/director/transfer.js';
 import { accretedFraction, textbookTrack, transferTrack } from '../src/physics/transfer.js';
 
 const close = (value, expected, tolerance) => Math.abs(value / expected - 1) <= tolerance;
@@ -115,13 +116,22 @@ test('the stream bundle is the same every time it is built', () => {
   assert.deepEqual(one.data, two.data);
 });
 
-test('accretion shines at the Eddington limit and only logarithmically above it', () => {
-  const edd = eddingtonRate(10);
-  const limit = accretionLuminosity(10, edd);
-  const eddington = (4 * Math.PI * 6.674e-8 * 10 * 1.989e33 * 2.99792458e10) / 0.34 / 3.828e33;
-  assert.ok(Math.abs(limit / eddington - 1) < 1e-12, `${limit} L_sun`);
-  assert.ok(Math.abs(accretionLuminosity(10, 0.5 * edd) / limit - 0.5) < 1e-12);
-  assert.ok(Math.abs(accretionLuminosity(10, Math.E * edd) / limit - 2) < 1e-12);
+test('accretion releases GM Mdot / R up to the Eddington limit and only logarithmically above it', () => {
+  const eddington = (4 * Math.PI * 6.674e-8 * 10 * 1.989e33 * 2.99792458e10) / 0.34;
+  const rate = (eddington * 0.01 * 6.957e10) / (6.674e-8 * 10 * 1.989e33);
+  const limit = accretionLuminosity(10, rate, 0.01);
+  assert.ok(Math.abs(limit / (eddington / 3.828e33) - 1) < 1e-12, `${limit} L_sun`);
+  assert.ok(Math.abs(accretionLuminosity(10, 0.5 * rate, 0.01) / limit - 0.5) < 1e-12);
+  assert.ok(Math.abs(accretionLuminosity(10, Math.E * rate, 0.01) / limit - 2) < 1e-12);
+});
+
+test('a white dwarf swells no smaller than itself and shines with what it accretes', () => {
+  const dwarf = { kind: 'WD', mass: 0.8, radius: 0.012, teff: 20000, lobe: 0.5 };
+  const shell = outflowPhotosphere({ rate: 1e-6, accreted: 0.1 }, dwarf);
+  assert.ok(shell.radius >= dwarf.radius && shell.radius <= 0.9 * dwarf.lobe, `${shell.radius}`);
+  const released = (6.674e-8 * 0.8 * 1.989e33 * ratePerSecond(1e-6)) / (2 * 0.012 * 6.957e10) / 3.828e33;
+  assert.ok(Math.abs(shell.light / released - 1) < 1e-9, `${shell.light} L_sun`);
+  assert.equal(outflowPhotosphere({ rate: 1e-6, accreted: 1 }, dwarf), null);
 });
 
 test('the re-emitted outflow leaves at the escape speed from where it is launched', () => {

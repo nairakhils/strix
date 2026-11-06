@@ -36,9 +36,9 @@ export function eddingtonRate(mass) {
   return (4 * Math.PI * GRAVITY * mass * SUN_MASS) / (ELECTRON_OPACITY * LIGHT * RADIATIVE_EFFICIENCY);
 }
 
-export function accretionLuminosity(mass, rate) {
-  const share = rate / eddingtonRate(mass);
+export function accretionLuminosity(mass, rate, radius) {
   const eddington = (4 * Math.PI * GRAVITY * mass * SUN_MASS * LIGHT) / ELECTRON_OPACITY;
+  const share = (GRAVITY * mass * SUN_MASS * rate) / (radius * SUN_RADIUS) / eddington;
   return (eddington * (share > 1 ? 1 + Math.log(share) : share)) / SUN_LUMINOSITY;
 }
 

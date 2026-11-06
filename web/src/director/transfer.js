@@ -29,6 +29,7 @@ export const NS_RADIUS = 10 / 6.957e5;
 export const COOLEST_DISK = 3000;
 export const MIN_ASPECT = 0.01;
 export const MAX_ASPECT = 0.2;
+export const COCOON_FILL = 0.9;
 
 const compactKinds = new Set(['BH', 'NS', 'WD']);
 
@@ -64,21 +65,24 @@ export function episodeProgress(episode, donorMass) {
   return clamp((episode.md0 - donorMass) / (episode.md0 - episode.md1), 0, 1);
 }
 
-function cocoonOf({ rate, accreted }, { kind, mass, radius, teff, lobe }) {
+export function outflowPhotosphere({ rate, accreted }, { kind, mass, radius, teff, lobe }) {
   const compact = compactKinds.has(kind);
   const grams = ratePerSecond(rate);
-  const launch = compact ? Math.min(spherisationRadius(mass, grams), lobe) : radius;
+  const inner = accretorInner(kind, radius);
+  const launch = compact ? Math.min(Math.max(spherisationRadius(mass, grams), inner), lobe) : radius;
   const depth = outflowDepth((1 - accreted) * rate, mass, launch);
   if (!(depth > 1)) return null;
   return {
     compact,
-    radius: Math.min(depth * launch, lobe),
-    light: compact ? accretionLuminosity(mass, grams) : luminosity(radius, teff),
+    radius: Math.max(Math.min(depth * launch, COCOON_FILL * lobe), radius),
+    light: compact
+      ? accretionLuminosity(mass, grams, 2 * inner)
+      : luminosity(radius, teff) + accretionLuminosity(mass, accreted * grams, radius),
   };
 }
 
 export function applyTransfers(episodes, { masses, radii, teffs, kinds, elemA, status }) {
-  const swollen = masses.map((values) => new Uint8Array(values.length));
+  const shells = masses.map((values) => ({ radius: new Float64Array(values.length), light: new Float64Array(values.length) }));
   const ease = 1 - DETACH_FROM;
   for (const episode of episodes) {
     const d = episode.donor;
@@ -95,15 +99,14 @@ export function applyTransfers(episodes, { masses, radii, teffs, kinds, elemA, s
       teffs[d][n] = surfaceTemperature(Math.exp(early + (late - early) * x), radii[d][n]);
       const swell = smoothstep(clamp(x / ease, 0, 1)) * (1 - detach);
       const accretor = { kind: kinds[k][n], mass: masses[k][n], radius: radii[k][n], teff: teffs[k][n] };
-      const cocoon = swell > 0 ? cocoonOf(episode, { ...accretor, lobe: eggleton(masses[k][n] / masses[d][n]) * a }) : null;
+      const cocoon = swell > 0 ? outflowPhotosphere(episode, { ...accretor, lobe: eggleton(masses[k][n] / masses[d][n]) * a }) : null;
       if (!cocoon) continue;
       const from = cocoon.compact ? 0 : accretor.radius;
-      radii[k][n] = from + (cocoon.radius - from) * swell;
-      teffs[k][n] = surfaceTemperature(cocoon.light, cocoon.compact ? cocoon.radius : radii[k][n]);
-      swollen[k][n] = 1;
+      shells[k].radius[n] = from + (cocoon.radius - from) * swell;
+      shells[k].light[n] = cocoon.compact ? cocoon.light * swell * swell : cocoon.light;
     }
   }
-  return swollen;
+  return shells;
 }
 
 function accretorInner(kind, radius) {
