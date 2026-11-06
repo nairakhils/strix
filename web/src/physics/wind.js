@@ -70,3 +70,15 @@ export function scatteringProfile(p) {
 export function profileTable(samples = PROFILE_SAMPLES, reach = WIND_REACH) {
   return Float32Array.from({ length: samples }, (_, k) => scatteringProfile(reach ** (k / (samples - 1))));
 }
+
+export function scatteredShare(table, reach = WIND_REACH, steps = 4096) {
+  const last = table.length - 1;
+  let sum = 0;
+  for (let k = 0; k < steps; k += 1) {
+    const x = (k + 0.5) / steps;
+    const at = x * last;
+    const i = Math.min(Math.floor(at), last - 1);
+    sum += 2 * (table[i] + (table[i + 1] - table[i]) * (at - i)) * reach ** (2 * x);
+  }
+  return (sum * Math.log(reach)) / steps;
+}

@@ -6,6 +6,7 @@ uniform float flow;
 uniform float blur;
 uniform float compression;
 uniform float outward;
+uniform float share;
 
 varying vec2 vOffset;
 
@@ -47,7 +48,8 @@ void main() {
   float edge = length(vOffset);
   float p = max(edge * reach, 1.0);
   float fade = 1.0 - smoothstep(0.7, 1.0, edge);
-  float haze = pow(1.0 - exp(-depth * scattered(p)), compression);
+  float s = scattered(p);
+  float haze = pow(min(1.0 - exp(-depth * s), (1.0 - exp(-depth * share)) * s / share), compression);
   vec2 around = vOffset / max(edge, 1e-6) * AROUND;
   float z = (p + log(max(p - 1.0, 0.05))) * outward - flow;
   float spacing = min(blur, 3.0) / 3.0;

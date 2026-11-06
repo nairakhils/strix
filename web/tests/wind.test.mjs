@@ -4,6 +4,7 @@ import {
   ELECTRON_MOLECULAR_WEIGHT,
   ionisedFraction,
   profileTable,
+  scatteredShare,
   scatteringDepth,
   scatteringProfile,
   terminalSpeed,
@@ -52,4 +53,16 @@ test('wind crossings count stellar radii travelled at the terminal speed', () =>
   assert.ok(Math.abs(crossings / ((day * terminalSpeed(40000, 30, 10)) / (10 * 6.957e10)) - 1) < 1e-12);
   assert.equal(windCrossings(0, 40000, 30, 10), 0);
   assert.equal(windCrossings(day, 40000, 0, 10), 0);
+});
+
+test('the drawn scattering profile carries close to the light of the exact one', () => {
+  const steps = 4000;
+  let direct = 0;
+  for (let k = 0; k < steps; k += 1) {
+    const x = (k + 0.5) / steps;
+    const p = 8 ** x;
+    direct += 2 * scatteringProfile(p) * p * p * Math.log(8) / steps;
+  }
+  const share = scatteredShare(profileTable());
+  assert.ok(Math.abs(share / direct - 1) < 0.15, `${share} vs ${direct}`);
 });
