@@ -395,7 +395,7 @@ export function makeDirector(scene, { log: logScale = false, camera = 'fixed' } 
   const weights = episodeWeights(Uint8Array.from(stage, (name) => (name ? 1 : 0)));
   const { status, elemA, elemE, runs, runOf } = binaryStatus({ a, e, masses, radii }, frameCount);
   const transfers = transferEpisodes(header.events);
-  applyTransfers(transfers, { masses, radii, teffs, elemA, status });
+  const swollen = applyTransfers(transfers, { masses, radii, teffs, kinds, elemA, status });
   const transferOf = transferFrames(transfers, frameCount);
   const stops = transfers.map((episode) => stopFrame(episode, masses));
   const masks = stageMasks(stage, kinds, frameCount);
@@ -741,7 +741,7 @@ export function makeDirector(scene, { log: logScale = false, camera = 'fixed' } 
       t,
       u: i + t,
       status: status[i],
-      kinds: [kinds[0][i], kinds[1][i]],
+      kinds: [0, 1].map((k) => (swollen[k][i] ? 'star' : kinds[k][i])),
       time: at(time),
       a: at(a),
       e: at(e),
@@ -1497,7 +1497,7 @@ export function makeDirector(scene, { log: logScale = false, camera = 'fixed' } 
         a: (g.run?.escape ? g.run.escape.a : modelled(transfer) ? s.elemA : s.a) / units.rsun,
         e: g.run?.escape ? g.run.escape.e : s.e,
         escape: g.run?.escape ? g.run.escape.speed : null,
-        modelled: modelled(transfer) ? transfer.donor : null,
+        modelled: modelled(transfer) ? [0, 1].filter((k) => k === transfer.donor || swollen[k][s.i]) : [],
         flow: transfer && transfer.presence.stream > 0 && !commonNote ? transfer.flow : null,
         m1: s.mass[0] / units.msun,
         m2: s.mass[1] / units.msun,

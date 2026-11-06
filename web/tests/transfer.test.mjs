@@ -2,7 +2,16 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { BUNDLE_LAUNCH, closestApproach, integrateStream, jacobi, streamBundle, streamPath } from '../src/physics/stream.js';
 import { lagrangeL1 } from '../src/physics/roche.js';
-import { diskTemperature, ratePerSecond, spherisationRadius, spotTemperature, viscousYears } from '../src/physics/disk.js';
+import {
+  accretionLuminosity,
+  diskTemperature,
+  eddingtonRate,
+  ratePerSecond,
+  spherisationRadius,
+  spotTemperature,
+  viscousYears,
+} from '../src/physics/disk.js';
+import { outflowDepth, scatteringDepth } from '../src/physics/wind.js';
 import { accretedFraction, textbookTrack, transferTrack } from '../src/physics/transfer.js';
 
 const close = (value, expected, tolerance) => Math.abs(value / expected - 1) <= tolerance;
@@ -104,4 +113,19 @@ test('the stream bundle is the same every time it is built', () => {
   const [one, two] = [streamBundle(0.7), streamBundle(0.7)];
   assert.deepEqual(one.lengths, two.lengths);
   assert.deepEqual(one.data, two.data);
+});
+
+test('accretion shines at the Eddington limit and only logarithmically above it', () => {
+  const edd = eddingtonRate(10);
+  const limit = accretionLuminosity(10, edd);
+  const eddington = (4 * Math.PI * 6.674e-8 * 10 * 1.989e33 * 2.99792458e10) / 0.34 / 3.828e33;
+  assert.ok(Math.abs(limit / eddington - 1) < 1e-12, `${limit} L_sun`);
+  assert.ok(Math.abs(accretionLuminosity(10, 0.5 * edd) / limit - 0.5) < 1e-12);
+  assert.ok(Math.abs(accretionLuminosity(10, Math.E * edd) / limit - 2) < 1e-12);
+});
+
+test('the re-emitted outflow leaves at the escape speed from where it is launched', () => {
+  const escape = Math.sqrt((2 * 6.674e-8 * 10 * 1.989e33) / (5 * 6.957e10));
+  assert.ok(Math.abs(outflowDepth(1e-3, 10, 5) / scatteringDepth(1e-3, 5, escape) - 1) < 1e-12);
+  assert.equal(outflowDepth(0, 10, 5), 0);
 });

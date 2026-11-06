@@ -8,6 +8,7 @@ const HYDROGEN_MASS = 1.6735e-24;
 const SUN_MASS = 1.989e33;
 const SUN_RADIUS = 6.957e10;
 const YEAR = 3.15576e7;
+const SUN_LUMINOSITY = 3.828e33;
 
 export const ELECTRON_OPACITY = 0.34;
 export const MEAN_MOLECULAR_WEIGHT = 0.6;
@@ -33,6 +34,12 @@ export function orbitalSpeed(a, mass) {
 
 export function eddingtonRate(mass) {
   return (4 * Math.PI * GRAVITY * mass * SUN_MASS) / (ELECTRON_OPACITY * LIGHT * RADIATIVE_EFFICIENCY);
+}
+
+export function accretionLuminosity(mass, rate) {
+  const share = rate / eddingtonRate(mass);
+  const eddington = (4 * Math.PI * GRAVITY * mass * SUN_MASS * LIGHT) / ELECTRON_OPACITY;
+  return (eddington * (share > 1 ? 1 + Math.log(share) : share)) / SUN_LUMINOSITY;
 }
 
 export function spherisationRadius(mass, rate) {

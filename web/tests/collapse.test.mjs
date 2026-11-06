@@ -162,8 +162,8 @@ test('the unbound pair keeps the hyperbola it was given at the kick', () => {
     near(hud.e, end.e, 1e-9, `e at ${u}`);
     near(hud.escape, expected, 1e-9, `escape speed at ${u}`);
   }
-  assert.equal(orbitText({ a: -6.81, e: 20.58, escape: 901.2, modelled: null }), 'unbound: a = -6.81 R☉   e = 20.58   v∞ = 901 km/s');
-  assert.equal(orbitText({ a: 142.9, e: 0, escape: null, modelled: null }), 'a = 142.90 R☉   e = 0.00');
+  assert.equal(orbitText({ a: -6.81, e: 20.58, escape: 901.2, modelled: [] }), 'unbound: a = -6.81 R☉   e = 20.58   v∞ = 901 km/s');
+  assert.equal(orbitText({ a: 142.9, e: 0, escape: null, modelled: [] }), 'a = 142.90 R☉   e = 0.00');
 });
 
 test('the fixed camera keeps one bearing and elevation for the whole movie', () => {

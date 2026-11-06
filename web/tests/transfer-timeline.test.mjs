@@ -89,14 +89,20 @@ test('example 2: the disk is born from the stream, built over an arc of the orbi
   assert.ok(later.outer > first.outer);
 });
 
-test('example 0: the black-hole accretor gets a supercritical disk', () => {
-  const { cinematic } = load(0);
-  for (const u of [880, 900, 915]) {
-    const { transfer } = cinematic.stateAt(u);
-    assert.equal(transfer.donor, 1);
-    assert.ok(transfer.disk.sphere > transfer.disk.outer, `sphere ${transfer.disk.sphere} at ${u}`);
-    assert.ok(transfer.disk.inner < 1e-5);
+test('mass the accretor cannot keep swells it into an outflow photosphere filling its lobe', () => {
+  for (const [index, accretor, frames] of [[0, 0, [880, 900, 915]], [1, 1, [360, 380]]]) {
+    const { cinematic } = load(index);
+    for (const u of frames) {
+      const state = cinematic.stateAt(u);
+      const fill = state.stars[accretor].shape?.fill;
+      assert.equal(state.stars[accretor].kind, 'star', `example ${index} at ${u}`);
+      assert.ok(Math.abs(fill - 1) < 0.01, `example ${index} at ${u}: fill ${fill}`);
+      assert.deepEqual(state.hud.modelled, [0, 1]);
+    }
   }
+  const kept = load(2).cinematic.stateAt(225);
+  assert.deepEqual(kept.hud.modelled, [0]);
+  assert.ok(kept.stars[1].shape === null || kept.stars[1].shape.fill < 0.9);
 });
 
 test('detached frames carry no transfer', () => {
@@ -107,21 +113,23 @@ test('detached frames carry no transfer', () => {
 test('during a transfer the HUD shows the drawn separation, marked as a model value', () => {
   const { table, cinematic } = load(2);
   const inside = cinematic.stateAt(225);
-  assert.equal(inside.hud.modelled, 0);
+  assert.deepEqual(inside.hud.modelled, [0]);
   assert.ok(Math.abs(inside.hud.a / separation(inside) - 1) < 1e-9);
   assert.ok(Math.abs(inside.hud.a - table.columns.a[225]) > 10);
   assert.equal(inside.hud.flow.accreted, 1);
   const outside = cinematic.stateAt(150);
-  assert.equal(outside.hud.modelled, null);
+  assert.deepEqual(outside.hud.modelled, []);
   assert.equal(outside.hud.a, table.columns.a[150]);
 });
 
 test('a disk grows from the circularisation radius toward the tidal radius', () => {
-  const { cinematic } = load(0);
-  const early = cinematic.stateAt(875).transfer;
-  const late = cinematic.stateAt(915).transfer;
-  assert.ok(late.disk.outer > early.disk.outer);
-  assert.ok(early.disk.outer >= early.circularisation - 1e-12);
-  const fresh = cinematic.stateAt(365).transfer;
+  const { cinematic } = load(2);
+  let u = 230;
+  while (!cinematic.stateAt(u).transfer?.disk) u += 0.25;
+  const fresh = cinematic.stateAt(u).transfer;
+  const early = cinematic.stateAt(u + 1.25).transfer;
+  const late = cinematic.stateAt(248).transfer;
   assert.ok(Math.abs(fresh.disk.outer - fresh.circularisation) < 1e-9);
+  assert.ok(early.disk.outer >= early.circularisation - 1e-12);
+  assert.ok(late.disk.outer > early.disk.outer);
 });

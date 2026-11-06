@@ -48,6 +48,11 @@ export function scatteringDepth(mdot, radius, speed) {
   return (THOMSON * rate) / (4 * Math.PI * radius * SUN_RADIUS * speed * ELECTRON_MOLECULAR_WEIGHT * PROTON_MASS);
 }
 
+export function outflowDepth(mdot, mass, radius) {
+  if (!(mdot > 0 && mass > 0 && radius > 0)) return 0;
+  return scatteringDepth(mdot, radius, Math.sqrt((2 * GRAVITY * mass * SUN_MASS) / (radius * SUN_RADIUS)));
+}
+
 export function windDepth({ mdot, teff, mass, radius }) {
   if (!(mdot > 0 && mass > 0 && radius > 0)) return 0;
   return ionisedFraction(teff) * scatteringDepth(mdot, radius, terminalSpeed(teff, mass, radius));

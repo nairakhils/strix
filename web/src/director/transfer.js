@@ -1,6 +1,7 @@
 import { eggleton } from '../physics/roche.js';
 import { streamPath, closestApproach } from '../physics/stream.js';
 import {
+  accretionLuminosity,
   diskTemperature,
   innerTemperature,
   orbitalSpeed,
@@ -14,6 +15,7 @@ import {
 } from '../physics/disk.js';
 import { luminosity, surfaceTemperature } from '../physics/light.js';
 import { accretedFraction, transferTrack } from '../physics/transfer.js';
+import { outflowDepth } from '../physics/wind.js';
 import { clamp, smoothstep } from './blend.js';
 
 export const DETACH_FROM = 0.95;
@@ -62,21 +64,46 @@ export function episodeProgress(episode, donorMass) {
   return clamp((episode.md0 - donorMass) / (episode.md0 - episode.md1), 0, 1);
 }
 
-export function applyTransfers(episodes, { masses, radii, teffs, elemA, status }) {
+function cocoonOf({ rate, accreted }, { kind, mass, radius, teff, lobe }) {
+  const compact = compactKinds.has(kind);
+  const grams = ratePerSecond(rate);
+  const launch = compact ? Math.min(spherisationRadius(mass, grams), lobe) : radius;
+  const depth = outflowDepth((1 - accreted) * rate, mass, launch);
+  if (!(depth > 1)) return null;
+  return {
+    compact,
+    radius: Math.min(depth * launch, lobe),
+    light: compact ? accretionLuminosity(mass, grams) : luminosity(radius, teff),
+  };
+}
+
+export function applyTransfers(episodes, { masses, radii, teffs, kinds, elemA, status }) {
+  const swollen = masses.map((values) => new Uint8Array(values.length));
+  const ease = 1 - DETACH_FROM;
   for (const episode of episodes) {
     const d = episode.donor;
+    const k = 1 - d;
     const [early, late] = episode.light;
     for (let n = episode.first; n <= episode.last; n += 1) {
       if (status[n] === 'disrupted') continue;
       const x = episodeProgress(episode, masses[d][n]);
       const a = episode.track(x);
       elemA[n] = a;
-      const lobe = eggleton(masses[d][n] / masses[1 - d][n]) * a;
-      const detach = smoothstep(clamp((x - DETACH_FROM) / (1 - DETACH_FROM), 0, 1));
+      const lobe = eggleton(masses[d][n] / masses[k][n]) * a;
+      const detach = smoothstep(clamp((x - DETACH_FROM) / ease, 0, 1));
       radii[d][n] = lobe + (radii[d][n] - lobe) * detach;
       teffs[d][n] = surfaceTemperature(Math.exp(early + (late - early) * x), radii[d][n]);
+      const swell = smoothstep(clamp(x / ease, 0, 1)) * (1 - detach);
+      const accretor = { kind: kinds[k][n], mass: masses[k][n], radius: radii[k][n], teff: teffs[k][n] };
+      const cocoon = swell > 0 ? cocoonOf(episode, { ...accretor, lobe: eggleton(masses[k][n] / masses[d][n]) * a }) : null;
+      if (!cocoon) continue;
+      const from = cocoon.compact ? 0 : accretor.radius;
+      radii[k][n] = from + (cocoon.radius - from) * swell;
+      teffs[k][n] = surfaceTemperature(cocoon.light, cocoon.compact ? cocoon.radius : radii[k][n]);
+      swollen[k][n] = 1;
     }
   }
+  return swollen;
 }
 
 function accretorInner(kind, radius) {

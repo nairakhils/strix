@@ -108,7 +108,7 @@ export function binaryText({ m1, m2, e, mach, units }) {
 
 export function orbitText({ a, e, escape, modelled }) {
   if (escape) return `unbound: a = ${fixed2(a)} R☉   e = ${fixed2(e)}   v∞ = ${speedText(escape)}`;
-  return `a = ${fixed2(a)} R☉${modelled === null ? '' : ' (model)'}   e = ${fixed2(e)}`;
+  return `a = ${fixed2(a)} R☉${modelled.length > 0 ? ' (model)' : ''}   e = ${fixed2(e)}`;
 }
 
 export function collapseText(collapse) {
@@ -314,7 +314,7 @@ function drawReadout(pen, hud) {
   pen.text(`t = ${fixed2(hud.time)} ${hud.units.time}`, left, y + 18 * unit);
   y += 42 * unit;
   pen.font(20);
-  const tag = (k) => (hud.modelled === k ? ' (model)' : '');
+  const tag = (k) => (hud.modelled.includes(k) ? ' (model)' : '');
   const fills = hud.fills.filter((f) => f !== null && f !== undefined).map(fixed2);
   const binary = hud.units.system === 'binary';
   const blocks = [
