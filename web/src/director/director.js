@@ -378,6 +378,7 @@ export function makeDirector(scene, { log: logScale = false, camera = 'fixed' } 
   const teffs = [scaled(columns.teff1, 1, frameCount), scaled(columns.teff2, 1, frameCount)];
   const spins = [columns.spin1, columns.spin2].map((values) => spinRatios(values, frameCount));
   const winds = [columns.wind1 ?? null, columns.wind2 ?? null];
+  const regimes = [columns.regime1 ?? null, columns.regime2 ?? null];
   const periods = [1, 2].map((k) => Float64Array.from(columns[`period${k}`] ?? new Float64Array(frameCount)));
   const fields = [1, 2].map((k) => Float64Array.from(columns[`field${k}`] ?? new Float64Array(frameCount)));
   const kinds = [columns.kind1, columns.kind2].map((values) => (values ? Array.from(values) : new Array(frameCount).fill('point')));
@@ -684,7 +685,7 @@ export function makeDirector(scene, { log: logScale = false, camera = 'fixed' } 
   }
 
   const travels = [0, 1].map((k) => integrate((i, t) => (kinds[k][i] === 'star'
-    ? windCrossings(secondsPerFrame(i, t), lerp(teffs[k], i, t), lerp(masses[k], i, t), lerp(radii[k], i, t))
+    ? windCrossings(secondsPerFrame(i, t), lerp(teffs[k], i, t), lerp(masses[k], i, t), lerp(radii[k], i, t), regimes[k]?.[i])
     : 0)));
 
   function windClock(k, u) {
@@ -1237,7 +1238,7 @@ export function makeDirector(scene, { log: logScale = false, camera = 'fixed' } 
       teff,
       spin: kind === 'star' ? lerp(spins[k], s.i, s.t) : 0,
       wind: kind === 'star' && winds[k]
-        ? windDepth({ mdot: lerp(winds[k], s.i, s.t), teff, mass: s.mass[k], radius: s.radius[k] })
+        ? windDepth({ mdot: lerp(winds[k], s.i, s.t), teff, mass: s.mass[k], radius: s.radius[k], regime: regimes[k]?.[s.i] })
         : 0,
       windClock: windClock(k, s.u),
       shape: shaped

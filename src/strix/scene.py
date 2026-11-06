@@ -35,14 +35,17 @@ UNITS = {
     "period2": "s",
     "field1": "G",
     "field2": "G",
+    "regime1": "",
+    "regime2": "",
     "transfer": "Msun/yr",
     "stage": "",
     "label": "",
 }
 REQUIRED = ("time", "a", "e", "m1", "m2")
-TEXT = ("kind1", "kind2", "type1", "type2", "stage", "label")
+TEXT = ("kind1", "kind2", "type1", "type2", "regime1", "regime2", "stage", "label")
 KINDS = ("point", "star", "WD", "NS", "BH", "none")
 STAGES = ("", "transfer", "envelope")
+REGIMES = ("", "GB", "LBV", "OB", "RSG", "VMS", "WR")
 ORBIT = ("time", "m1", "m2", "a", "e")
 STARS = (*ORBIT, "r1", "r2", "teff1", "teff2")
 EVENTS = {
@@ -69,7 +72,14 @@ def check_columns(columns):
     lengths = {len(values) for values in columns.values()}
     if len(lengths) != 1:
         raise ValueError("columns differ in length")
-    for name, allowed in (("kind1", KINDS), ("kind2", KINDS), ("stage", STAGES)):
+    allowed_values = (
+        ("kind1", KINDS),
+        ("kind2", KINDS),
+        ("regime1", REGIMES),
+        ("regime2", REGIMES),
+        ("stage", STAGES),
+    )
+    for name, allowed in allowed_values:
         wrong = sorted(set(map(str, columns.get(name, ()))) - set(allowed))
         if wrong:
             raise ValueError(f"{name} has unknown values: {', '.join(wrong)}")

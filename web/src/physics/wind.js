@@ -11,6 +11,7 @@ export const WIND_REACH = 8;
 export const PROFILE_SAMPLES = 48;
 
 const HOT_RATIO = 2.6;
+const WOLF_RAYET_RATIO = 1;
 const WARM_RATIO = 1.3;
 const COOL_RATIO = 0.7;
 const HOT_JUMP = 21000;
@@ -24,19 +25,20 @@ const clamp = (value, lo, hi) => Math.min(Math.max(value, lo), hi);
 const smoothstep = (t) => t * t * (3 - 2 * t);
 const logistic = (x) => 1 / (1 + Math.exp(-x));
 
-export function terminalSpeedRatio(teff) {
+export function terminalSpeedRatio(teff, regime = '') {
+  if (regime === 'WR') return WOLF_RAYET_RATIO;
   const warm = logistic((teff - COOL_JUMP) / JUMP_WIDTH);
   const hot = logistic((teff - HOT_JUMP) / JUMP_WIDTH);
   return COOL_RATIO + (WARM_RATIO - COOL_RATIO) * warm + (HOT_RATIO - WARM_RATIO) * hot;
 }
 
-export function terminalSpeed(teff, mass, radius) {
-  return terminalSpeedRatio(teff) * Math.sqrt((2 * GRAVITY * mass * SUN_MASS) / (radius * SUN_RADIUS));
+export function terminalSpeed(teff, mass, radius, regime = '') {
+  return terminalSpeedRatio(teff, regime) * Math.sqrt((2 * GRAVITY * mass * SUN_MASS) / (radius * SUN_RADIUS));
 }
 
-export function windCrossings(seconds, teff, mass, radius) {
+export function windCrossings(seconds, teff, mass, radius, regime = '') {
   if (!(seconds > 0 && mass > 0 && radius > 0)) return 0;
-  return (seconds * terminalSpeed(teff, mass, radius)) / (radius * SUN_RADIUS);
+  return (seconds * terminalSpeed(teff, mass, radius, regime)) / (radius * SUN_RADIUS);
 }
 
 export function ionisedFraction(teff) {
@@ -53,9 +55,9 @@ export function outflowDepth(mdot, mass, radius) {
   return scatteringDepth(mdot, radius, Math.sqrt((2 * GRAVITY * mass * SUN_MASS) / (radius * SUN_RADIUS)));
 }
 
-export function windDepth({ mdot, teff, mass, radius }) {
+export function windDepth({ mdot, teff, mass, radius, regime = '' }) {
   if (!(mdot > 0 && mass > 0 && radius > 0)) return 0;
-  return ionisedFraction(teff) * scatteringDepth(mdot, radius, terminalSpeed(teff, mass, radius));
+  return ionisedFraction(teff) * scatteringDepth(mdot, radius, terminalSpeed(teff, mass, radius, regime));
 }
 
 function dilution(x) {

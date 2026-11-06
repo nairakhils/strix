@@ -141,7 +141,7 @@ def orbit(state):
     return {key: float(state[key]) for key in ("time", "m1", "m2", "a", "e")}
 
 
-def scene(text, types, events):
+def scene(text, types, regimes, events):
     keys = keyframes(text)
     samples = keys[-1][0] + 1
     states = dict(keys)
@@ -171,6 +171,8 @@ def scene(text, types, events):
         "kind2": [REMNANTS.get(name, "star") for name in types[1]],
         "type1": types[0],
         "type2": types[1],
+        "regime1": runs(samples, regimes[0]),
+        "regime2": runs(samples, regimes[1]),
         "transfer": rates,
         "stage": stage,
         "label": labels,
@@ -183,6 +185,7 @@ def stable():
         [(0, "MS"), (210, "HG"), (360, "HeMS"), (520, "HeHG"), (670, "BH")],
         [(0, "MS"), (770, "HG"), (920, "HeMS"), (1080, "HeHG"), (1230, "BH")],
     ]
+    regimes = [[(0, "OB"), (421, "WR")], [(0, "OB"), (981, "WR")]]
     events = [
         ("transfer", 1, (94, 203), 203, None),
         ("transfer", 1, (310, 359), 420, None),
@@ -190,7 +193,7 @@ def stable():
         ("transfer", 2, (870, 919), 980, None),
         ("collapse", 2, (1180, 1229), 1279, {"hydrogen": 0.0, "helium": 3.6}),
     ]
-    return scene(STABLE, types, events)
+    return scene(STABLE, types, regimes, events)
 
 
 def envelope():
@@ -198,13 +201,14 @@ def envelope():
         [(0, "MS"), (150, "HG"), (250, "CHeB"), (400, "HeMS"), (560, "HeHG"), (710, "BH")],
         [(0, "MS"), (810, "HG"), (910, "CHeB"), (1160, "HeMS"), (1380, "HeHG"), (1530, "BH")],
     ]
+    regimes = [[(0, "OB"), (468, "WR")], [(0, "OB"), (991, "RSG"), (1315, "WR")]]
     events = [
         ("transfer", 1, (350, 399), 460, None),
         ("collapse", 1, (660, 709), 759, {"hydrogen": 0.0, "helium": 3.1}),
         ("envelope", 2, (1110, 1159), 1305, None),
         ("collapse", 2, (1480, 1529), 1579, {"hydrogen": 0.0, "helium": 3.3}),
     ]
-    return scene(ENVELOPE, types, events)
+    return scene(ENVELOPE, types, regimes, events)
 
 
 def unbound():
@@ -212,12 +216,13 @@ def unbound():
         [(0, "MS"), (100, "HG"), (250, "HeMS"), (410, "HeHG"), (560, "NS")],
         [(0, "MS"), (660, "HG"), (760, "CHeB"), (1360, "EAGB"), (1510, "BH")],
     ]
+    regimes = [[(0, "OB"), (315, "WR")], [(0, "OB"), (807, "RSG"), (835, "GB")]]
     events = [
         ("transfer", 1, (200, 249), 310, None),
         ("collapse", 1, (510, 559), 609, {"hydrogen": 0.0, "helium": 1.32}),
         ("collapse", 2, (1460, 1509), 1559, {"hydrogen": 11.6, "helium": 2.3}),
     ]
-    return scene(UNBOUND, types, events)
+    return scene(UNBOUND, types, regimes, events)
 
 
 SCENES = (stable, envelope, unbound)

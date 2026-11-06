@@ -66,3 +66,11 @@ test('the drawn scattering profile carries close to the light of the exact one',
   const share = scatteredShare(profileTable());
   assert.ok(Math.abs(share / direct - 1) < 0.15, `${share} vs ${direct}`);
 });
+
+test('Wolf-Rayet winds leave near the escape speed of the helium core', () => {
+  assert.equal(terminalSpeedRatio(100000, 'WR'), 1);
+  assert.equal(terminalSpeedRatio(100000, 'OB'), terminalSpeedRatio(100000));
+  const star = { mdot: 1e-5, teff: 100000, mass: 10, radius: 1 };
+  const ratio = windDepth({ ...star, regime: 'WR' }) / windDepth(star);
+  assert.ok(Math.abs(ratio - terminalSpeedRatio(100000)) < 1e-9, `${ratio}`);
+});

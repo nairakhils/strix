@@ -159,6 +159,7 @@ def test_columns_are_aligned_for_typed_arrays(tmp_path):
         ({"mass": [1.0] * 5}, "unknown columns"),
         ({"kind1": ["star", "giant", "star", "star", "star"]}, "kind1 has unknown values"),
         ({"stage": ["", "overflow", "", "", ""]}, "stage has unknown values"),
+        ({"regime1": ["OB", "WR", "dusty", "", ""]}, "regime1 has unknown values"),
         ({"a": [1.0, 2.0]}, "differ in length"),
     ],
 )
