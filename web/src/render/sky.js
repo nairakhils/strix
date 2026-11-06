@@ -23,6 +23,10 @@ function makeUniforms() {
     inverseProjection: { value: new THREE.Matrix4() },
     cameraWorld: { value: new THREE.Matrix4() },
     viewport: { value: new THREE.Vector2(1, 1) },
+    pixelAngle: { value: 1 },
+    lensCenter: { value: [new THREE.Vector2(), new THREE.Vector2()] },
+    lensEinstein: { value: [1, 1] },
+    lensActive: { value: [0, 0] },
   };
 }
 
@@ -51,16 +55,26 @@ export async function makeSky(stage, { skyVertex: vertexShader, skyFragment: fra
   mesh.renderOrder = -1000;
   stage.scene.add(mesh);
 
-  function update() {
+  function setLens(index, lens, height, ratio) {
+    const active = Boolean(lens) && lens.einstein > 0;
+    uniforms.lensActive.value[index] = active ? 1 : 0;
+    if (!active) return;
+    uniforms.lensCenter.value[index].set(lens.x * ratio, (height - lens.y) * ratio);
+    uniforms.lensEinstein.value[index] = lens.einstein * ratio;
+  }
+
+  function update(lenses) {
     const { width, height } = stage.size();
     const ratio = stage.renderer.getPixelRatio();
     const camera = stage.camera;
     uniforms.inverseProjection.value.copy(camera.projectionMatrixInverse);
     uniforms.cameraWorld.value.copy(camera.matrixWorld);
     uniforms.viewport.value.set(width * ratio, height * ratio);
+    uniforms.pixelAngle.value = pixelAngleFor(camera, height * ratio);
     if (uniforms.imageScale) {
       uniforms.imageScale.value.y = 1 / (uniforms.imageHeight.value * pixelAngleFor(camera, referenceHeight));
     }
+    for (let index = 0; index < 2; index++) setLens(index, lenses[index], height, ratio);
   }
 
   return { update };

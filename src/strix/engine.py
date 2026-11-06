@@ -4,8 +4,11 @@ import subprocess
 import time
 import webbrowser
 from pathlib import Path
+from urllib.parse import urlencode
 
 WEB = Path(__file__).resolve().parents[2] / "web"
+SCALES = ("linear", "log")
+CAMERAS = ("fixed", "follow")
 
 
 def node(tool, *arguments):
@@ -16,18 +19,34 @@ def node(tool, *arguments):
     return ["node", str(WEB / "tools" / tool), *map(str, arguments)]
 
 
-def checked(scene):
+def checked(scene, scale, camera):
     scene = Path(scene).resolve()
     if not scene.is_file():
         raise FileNotFoundError(scene)
+    if scale not in SCALES:
+        raise ValueError(f"scale must be one of {', '.join(SCALES)}")
+    if camera not in CAMERAS:
+        raise ValueError(f"camera must be one of {', '.join(CAMERAS)}")
     return scene
 
 
-def render(scene, out, *, width=1920, height=1080):
-    scene = checked(scene)
+def render(scene, out, *, scale="linear", camera="fixed", width=1920, height=1080):
+    scene = checked(scene, scale, camera)
     out = Path(out).resolve()
     command = node(
-        "render.mjs", "--scene", scene, "--out", out, "--width", width, "--height", height
+        "render.mjs",
+        "--scene",
+        scene,
+        "--out",
+        out,
+        "--scale",
+        scale,
+        "--camera",
+        camera,
+        "--width",
+        width,
+        "--height",
+        height,
     )
     subprocess.run(command, cwd=WEB, check=True)
     return out
@@ -52,13 +71,13 @@ def wait_for(server, port):
     raise RuntimeError(f"the strix server did not start on port {port}")
 
 
-def view(scene, *, port=0, open_browser=True):
-    scene = checked(scene)
+def view(scene, *, scale="linear", camera="fixed", port=0, open_browser=True):
+    scene = checked(scene, scale, camera)
     port = port or free_port()
     server = subprocess.Popen(node("serve.mjs", "--scene", scene, "--port", port), cwd=WEB)
     try:
         wait_for(server, port)
-        url = f"http://localhost:{port}/"
+        url = f"http://localhost:{port}/?{urlencode({'scale': scale, 'camera': camera})}"
         print(url)
         if open_browser:
             webbrowser.open(url)

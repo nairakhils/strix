@@ -45,6 +45,20 @@ function makeBloom(width, height) {
   return bloom;
 }
 
+function lensPass(material) {
+  const pass = new Pass();
+  const quad = new FullScreenQuad(material);
+  pass.enabled = false;
+  pass.render = (renderer, writeBuffer, readBuffer) => {
+    material.uniforms.frame.value = readBuffer.texture;
+    material.uniforms.frameDepth.value = readBuffer.depthTexture;
+    material.uniforms.viewport.value.set(readBuffer.width, readBuffer.height);
+    renderer.setRenderTarget(pass.renderToScreen ? null : writeBuffer);
+    quad.render(renderer);
+  };
+  return pass;
+}
+
 const blendVertex = `varying vec2 vUv;
 void main() {
   vUv = uv;
@@ -196,6 +210,12 @@ export function makeStage(container, { render, width, height }) {
     return canvasHeight / 2 / (depth * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2));
   }
 
+  function addLens(material) {
+    const pass = lensPass(material);
+    composer.insertPass(pass, 1);
+    return pass;
+  }
+
   function draw() {
     composer.readBuffer = composer.renderTarget1;
     composer.writeBuffer = composer.renderTarget2;
@@ -236,6 +256,7 @@ export function makeStage(container, { render, width, height }) {
     follow,
     onMove,
     resize,
+    addLens,
     gas: gas.scene,
   };
 }

@@ -5,15 +5,27 @@ import { makeHud } from './hud/hud.js';
 import { CONTROLS_HEIGHT, startViewer } from './viewer.js';
 import { makeRecorder } from './recorder.js';
 
+const ICON_SIZE = 64;
 const MAX_PIXEL_RATIO = 2;
 
 const params = new URLSearchParams(location.search);
 const options = {
   scene: params.get('scene') ?? 'scene.strix',
+  log: params.get('scale') === 'log',
+  camera: params.get('camera') === 'follow' ? 'follow' : 'fixed',
   record: params.has('record'),
   width: Number(params.get('width') ?? 1920),
   height: Number(params.get('height') ?? 1080),
 };
+
+async function legendEntries({ header, assets }) {
+  const icon = (name) => (assets[name]
+    ? createImageBitmap(assets[name], { resizeWidth: ICON_SIZE, resizeHeight: ICON_SIZE, resizeQuality: 'high' })
+    : null);
+  return Promise.all(
+    Object.entries(header.types ?? {}).map(async ([type, entry]) => [type, { name: entry.name, icon: await icon(entry.icon) }]),
+  );
+}
 
 function makeOverlay(container) {
   const canvas = document.createElement('canvas');
@@ -76,16 +88,21 @@ function interact(director, view, hud, container) {
       view.resize(w, h);
       overlay.resize(w, h);
     },
+    legend: hud.legend,
+    toggleLegend: () => {
+      hud.setLegend(!hud.legend());
+      return hud.legend();
+    },
   });
 }
 
 async function start() {
   const scene = await loadScene(options.scene);
-  const director = makeDirector(scene);
+  const director = makeDirector(scene, { log: options.log, camera: options.camera });
   const size = options.record ? options : { width: innerWidth, height: innerHeight };
   const container = document.getElementById('stage');
   document.body.classList.toggle('record', options.record);
-  const [view] = await Promise.all([
+  const [view, types] = await Promise.all([
     makeScene(container, {
       render: options.record,
       background: scene.assets[scene.header.sky] ?? null,
@@ -98,9 +115,10 @@ async function start() {
         load: (sample, level) => loadField(scene, sample, level),
       },
     }),
+    legendEntries(scene),
     document.fonts.ready,
   ]);
-  const hud = makeHud({ tMax: director.tMax, inset: options.record ? 0 : CONTROLS_HEIGHT });
+  const hud = makeHud({ tMax: director.tMax, types, inset: options.record ? 0 : CONTROLS_HEIGHT });
   if (options.record) await record(director, view, hud, size);
   else interact(director, view, hud, container);
 }

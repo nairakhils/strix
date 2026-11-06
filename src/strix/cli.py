@@ -2,7 +2,7 @@ import argparse
 from pathlib import Path
 
 from strix import sailfish
-from strix.engine import render, view
+from strix.engine import CAMERAS, SCALES, render, view
 
 
 def parse_arguments(argv=None):
@@ -13,12 +13,16 @@ def parse_arguments(argv=None):
 
     shown = commands.add_parser("view", help="open the interactive viewer")
     shown.add_argument("scene", type=Path)
+    shown.add_argument("--scale", choices=SCALES, default="linear")
+    shown.add_argument("--camera", choices=CAMERAS, default="fixed")
     shown.add_argument("--port", type=int, default=0)
     shown.add_argument("--no-browser", action="store_true")
 
     rendered = commands.add_parser("render", help="render an mp4")
     rendered.add_argument("scene", type=Path)
     rendered.add_argument("out", type=Path)
+    rendered.add_argument("--scale", choices=SCALES, default="linear")
+    rendered.add_argument("--camera", choices=CAMERAS, default="fixed")
     rendered.add_argument("--width", type=int, default=1920)
     rendered.add_argument("--height", type=int, default=1080)
 
@@ -37,7 +41,13 @@ def parse_arguments(argv=None):
 def main(argv=None):
     args = parse_arguments(argv)
     if args.command == "view":
-        view(args.scene, port=args.port, open_browser=not args.no_browser)
+        view(
+            args.scene,
+            scale=args.scale,
+            camera=args.camera,
+            port=args.port,
+            open_browser=not args.no_browser,
+        )
     elif args.command == "sailfish":
         sailfish.convert(
             args.products,
@@ -48,7 +58,14 @@ def main(argv=None):
             pixels=args.pixels,
         )
     else:
-        render(args.scene, args.out, width=args.width, height=args.height)
+        render(
+            args.scene,
+            args.out,
+            scale=args.scale,
+            camera=args.camera,
+            width=args.width,
+            height=args.height,
+        )
 
 
 if __name__ == "__main__":

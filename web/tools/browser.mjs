@@ -24,7 +24,7 @@ export function launch() {
   return chromium.launch(chromeOptions());
 }
 
-export async function openRecorder(browser, base, { width, height }) {
+export async function openRecorder(browser, base, { scale, camera = 'fixed', width, height }) {
   const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 1 });
   const failed = new Promise((_, reject) => {
     page.on('pageerror', reject);
@@ -34,7 +34,7 @@ export async function openRecorder(browser, base, { width, height }) {
   });
   failed.catch(() => {});
   const guard = (work) => Promise.race([work, failed]);
-  const query = new URLSearchParams({ width: String(width), height: String(height) });
+  const query = new URLSearchParams({ scale, camera, width: String(width), height: String(height) });
   await guard(page.goto(`${base}/?record&${query}`));
   await guard(page.waitForFunction(() => window.strix || window.strixError, null, { timeout: 120000 }));
   const error = await page.evaluate(() => window.strixError);

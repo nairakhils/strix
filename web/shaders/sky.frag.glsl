@@ -1,6 +1,10 @@
 uniform mat4 inverseProjection;
 uniform mat4 cameraWorld;
 uniform vec2 viewport;
+uniform float pixelAngle;
+uniform vec2 lensCenter[2];
+uniform float lensEinstein[2];
+uniform float lensActive[2];
 
 #ifdef SKY_IMAGE
 uniform sampler2D image;
@@ -48,7 +52,7 @@ vec3 tint(float t) {
   return vec3(0.68, 0.8, 1.0);
 }
 
-vec3 starfield(vec3 ray, vec3 dx, vec3 dy) {
+vec3 starfield(vec3 ray, vec3 dx, vec3 dy, float magnification) {
   vec3 size = abs(ray);
   int axis = size.x >= size.y && size.x >= size.z ? 0 : (size.y >= size.z ? 1 : 2);
   float major = ray[axis];
@@ -82,7 +86,7 @@ vec3 starfield(vec3 ray, vec3 dx, vec3 dy) {
         if (r2 > 9.0) continue;
         vec3 g = unit(pcg(seed));
         float brightness = min(starPeak, 0.035 * pow(max(g.x, 1e-4), -2.0 / 3.0));
-        light += tint(g.y) * brightness * exp(-0.5 * r2 / (starSigma * starSigma));
+        light += tint(g.y) * brightness * magnification * exp(-0.5 * r2 / (starSigma * starSigma));
       }
     }
   }
@@ -102,11 +106,26 @@ vec3 backdrop(vec3 ray) {
 #endif
 
 void main() {
-  vec3 ray = viewRay(gl_FragCoord.xy);
+  vec2 pixel = gl_FragCoord.xy;
+  vec2 source = pixel;
+  for (int i = 0; i < 2; i++) {
+    vec2 offset = pixel - lensCenter[i];
+    float theta = max(length(offset), 0.5);
+    float einstein = lensEinstein[i];
+    float reach = 1.0 - smoothstep(6.0 * einstein, 9.0 * einstein, theta);
+    source -= lensActive[i] * reach * einstein * einstein / (theta * theta) * offset;
+  }
+
+  vec3 ray = viewRay(source);
 #ifdef SKY_IMAGE
   vec3 color = backdrop(ray);
 #else
-  vec3 color = starfield(ray, dFdx(ray), dFdy(ray));
+  vec3 plain = viewRay(pixel);
+  vec3 dx = dFdx(ray);
+  vec3 dy = dFdy(ray);
+  float plainArea = length(cross(dFdx(plain), dFdy(plain)));
+  float lensedArea = max(length(cross(dx, dy)), 1e-4 * pixelAngle * pixelAngle);
+  vec3 color = starfield(ray, dx, dy, min(plainArea / lensedArea, 64.0));
 #endif
   gl_FragColor = vec4(color, 1.0);
 }

@@ -11,9 +11,11 @@ export function startViewer(view) {
   const scrub = element('scrub');
   const frameLabel = element('frame-label');
   const follow = element('follow');
+  const legend = element('legend');
   scrub.min = '0';
   scrub.max = String(view.last);
   scrub.step = '0.01';
+  legend.setAttribute('aria-pressed', String(view.legend()));
   let current = 0;
   let playing = false;
   let anchor = null;
@@ -34,6 +36,11 @@ export function startViewer(view) {
     playing = !playing;
     anchor = null;
     play.textContent = playing ? 'Pause' : 'Play';
+  }
+
+  function toggleLegend() {
+    legend.setAttribute('aria-pressed', String(view.toggleLegend()));
+    refresh();
   }
 
   function refollow() {
@@ -69,6 +76,8 @@ export function startViewer(view) {
       seek(current - 1);
     } else if (event.key === 'f') {
       refollow();
+    } else if (event.key === 'l') {
+      toggleLegend();
     }
   }
 
@@ -81,6 +90,7 @@ export function startViewer(view) {
 
   onClick(play, toggle);
   onClick(follow, refollow);
+  onClick(legend, toggleLegend);
   scrub.addEventListener('input', () => seek(scrub.valueAsNumber));
   addEventListener('keydown', onKey);
   addEventListener('resize', () => {

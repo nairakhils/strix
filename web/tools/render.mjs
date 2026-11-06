@@ -11,6 +11,8 @@ function readOptions() {
     options: {
       scene: { type: 'string' },
       out: { type: 'string' },
+      scale: { type: 'string', default: 'linear' },
+      camera: { type: 'string', default: 'fixed' },
       width: { type: 'string', default: '1920' },
       height: { type: 'string', default: '1080' },
     },
@@ -18,6 +20,8 @@ function readOptions() {
   for (const name of ['scene', 'out']) {
     if (!values[name]) throw new Error(`missing --${name}`);
   }
+  if (!['linear', 'log'].includes(values.scale)) throw new Error(`unknown --scale ${values.scale}`);
+  if (!['fixed', 'follow'].includes(values.camera)) throw new Error(`unknown --camera ${values.camera}`);
   const width = Number(values.width);
   const height = Number(values.height);
   if (![width, height].every((n) => Number.isInteger(n) && n > 0 && n % 2 === 0)) {
@@ -26,6 +30,8 @@ function readOptions() {
   return {
     scene: path.resolve(values.scene),
     out: path.resolve(values.out),
+    scale: values.scale,
+    camera: values.camera,
     width,
     height,
   };

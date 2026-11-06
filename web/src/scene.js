@@ -1,4 +1,5 @@
 const decoder = new TextDecoder();
+const arrays = { float64: Float64Array, uint16: Uint16Array };
 
 export const FORMAT = 'strix';
 export const VERSION = 2;
@@ -6,6 +7,11 @@ export const SAMPLE_RATE = 50;
 const ALIGNMENT = 8;
 
 const aligned = (size) => Math.ceil(size / ALIGNMENT) * ALIGNMENT;
+
+function decodeColumn(buffer, start, column, samples, strings) {
+  const values = new arrays[column.dtype](buffer, start + column.offset, samples);
+  return column.dtype === 'uint16' ? Array.from(values, (index) => strings[index]) : values;
+}
 
 export function parseScene(buffer) {
   const length = new DataView(buffer).getUint32(0, true);
@@ -16,7 +22,7 @@ export function parseScene(buffer) {
   if (!(header.rate > 0)) throw new Error(`samples must play at a positive rate, not ${header.rate}`);
   const start = aligned(4 + length);
   const columns = Object.fromEntries(
-    header.columns.map((column) => [column.name, new Float64Array(buffer, start + column.offset, header.samples)]),
+    header.columns.map((column) => [column.name, decodeColumn(buffer, start, column, header.samples, header.strings)]),
   );
   const assets = Object.fromEntries(
     header.assets.map(({ name, type, offset, length: size }) => [

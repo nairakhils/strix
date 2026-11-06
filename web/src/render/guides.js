@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import { relativeOrbit } from '../physics/kepler.js';
+import { shapeLevel, sphereGrid, surfaceOnGrid } from '../physics/roche.js';
+import { gridGeometry, orient } from './stars.js';
 
 export const TRAIL_SEGMENTS = 96;
 export const TRAIL_SPAN = 0.3;
@@ -48,6 +50,24 @@ function makeTrails(stage) {
   return trails;
 }
 
+function makeLobe(stage, shaders, grid, index) {
+  const material = new THREE.ShaderMaterial({
+    vertexShader: shaders.lobeVertex,
+    fragmentShader: shaders.lobeFragment,
+    uniforms: { lobeOpacity: { value: 0 } },
+    transparent: true,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+    polygonOffset: true,
+    polygonOffsetFactor: 1,
+    polygonOffsetUnits: 1,
+  });
+  const mesh = new THREE.Mesh(gridGeometry(grid, index), material);
+  mesh.visible = false;
+  stage.scene.add(mesh);
+  return { mesh, q: null };
+}
+
 function showTrail(trail, orbit, k, star) {
   trail.visible = orbit !== null && star.visible;
   if (!trail.visible) return;
@@ -62,11 +82,38 @@ function showTrail(trail, orbit, k, star) {
   color.needsUpdate = true;
 }
 
-export function makeGuides(stage) {
+export function makeGuides(stage, shaders) {
+  const grid = sphereGrid(48, 64);
+  const index = new THREE.BufferAttribute(grid.index, 1);
   const trails = makeTrails(stage);
+  const lobes = [makeLobe(stage, shaders, grid, index), makeLobe(stage, shaders, grid, index)];
+
+  function reshape(body, q) {
+    if (q === body.q) return;
+    body.q = q;
+    const { position, normal } = body.mesh.geometry.attributes;
+    const { level } = shapeLevel(q, 1);
+    surfaceOnGrid(q, level, grid, position.array, normal.array);
+    position.needsUpdate = true;
+    normal.needsUpdate = true;
+  }
+
+  function showLobe(body, star) {
+    const { lobe } = star;
+    body.mesh.visible = lobe !== null && lobe.opacity > 0;
+    if (!body.mesh.visible) return;
+    reshape(body, lobe.q);
+    body.mesh.position.fromArray(star.position);
+    orient(body.mesh, star.toward);
+    body.mesh.scale.setScalar(lobe.unit);
+    body.mesh.material.uniforms.lobeOpacity.value = lobe.opacity;
+  }
 
   function update({ orbit, stars }) {
-    for (let k = 0; k < 2; k += 1) showTrail(trails[k], orbit, k, stars[k]);
+    for (let k = 0; k < 2; k += 1) {
+      showTrail(trails[k], orbit, k, stars[k]);
+      showLobe(lobes[k], stars[k]);
+    }
   }
 
   return { update };

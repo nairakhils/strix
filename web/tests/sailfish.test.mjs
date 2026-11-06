@@ -24,17 +24,22 @@ test('one orbit is one period of the scaled binary', () => {
   const units = unitsOf({ units: 'binary', scale: { length: 215.032, mass: 1 } });
   close(units.myr, 1e-6);
   assert.deepEqual([units.time, units.length, units.mass], ['orbits', 'a', 'M']);
+  assert.equal(unitsOf({ units: 'solar' }).myr, 1);
+  assert.equal(unitsOf({}).system, 'solar');
 });
 
 test('the director plays a Sailfish run in code units', () => {
-  const director = makeDirector(sceneFile('sailfish'));
+  const director = makeDirector(sceneFile('sailfish'), { log: true });
+  assert.equal(director.log, false);
   close(director.duration, 30);
   const state = director.stateAt(1.5);
   const { hud, gas: field, stars } = state;
   close(hud.time, 150, 1e-3);
   close(hud.a, 1);
   close(hud.m1, 1 / 1.2);
+  assert.equal(hud.r1, null);
   assert.equal(hud.mach, 10);
+  assert.deepEqual(hud.fills, [null, null]);
   assert.deepEqual(field.samples, [1, 2]);
   close(field.weight, 0.5);
   close(field.bodies[1].at - field.bodies[0].at, 1);

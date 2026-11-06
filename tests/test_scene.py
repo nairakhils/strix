@@ -244,9 +244,12 @@ def test_sky_must_be_an_asset(tmp_path):
 
 
 def test_command_line():
-    shown = parse_arguments(["view", "run.strix"])
-    assert (shown.command, shown.port) == ("view", 0)
+    shown = parse_arguments(["view", "run.strix", "--scale", "log"])
+    assert (shown.command, shown.scale, shown.port) == ("view", "log", 0)
     rendered = parse_arguments(
         ["render", "run.strix", "run.mp4", "--width", "1280", "--height", "720"]
     )
     assert (rendered.command, rendered.width, rendered.height) == ("render", 1280, 720)
+    assert (shown.camera, rendered.camera) == ("fixed", "fixed")
+    followed = parse_arguments(["render", "run.strix", "run.mp4", "--camera", "follow"])
+    assert followed.camera == "follow"

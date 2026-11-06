@@ -1,6 +1,9 @@
 import { orbitalPeriodYears } from '../physics/kepler.js';
 
-export function unitsOf({ scale }) {
+const SOLAR = { system: 'solar', time: 'Myr', length: 'R☉', mass: 'M☉', myr: 1, rsun: 1, msun: 1 };
+
+export function unitsOf({ units, scale }) {
+  if (units !== 'binary') return SOLAR;
   return {
     system: 'binary',
     time: 'orbits',
