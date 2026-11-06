@@ -4,6 +4,7 @@ import {
   COOLING_TEMPERATURE,
   afterCollapse,
   diffusionSeconds,
+  ejectaDrift,
   ejectaSpeed,
   escapeSpeed,
   explosionEnergy,
@@ -77,6 +78,26 @@ test('an orbit Blaauw cannot reach is met with the smallest kick', () => {
   const unbound = afterCollapse({ ...state, mass: 12, a: -20, e: 4 });
   assert.equal(unbound.bound, false);
   near(unbound.e, 4, 1e-9, 'hyperbolic e');
+});
+
+test('the ejecta carry the momentum the remnant and companion lose', () => {
+  const [star, other, remnant] = [12, 8, 1.4];
+  const preMass = star + other;
+  const postMass = remnant + other;
+  const ejected = star - remnant;
+  const velocity = [0.3, -0.7];
+  const after = [0.5, -1.1];
+  for (const sign of [-1, 1]) {
+    const share = other / preMass;
+    const drift = ejectaDrift({ velocity, after, sign, share, preMass, postMass, remnant, ejected });
+    for (const n of [0, 1]) {
+      const companion = -sign * (1 - share) * velocity[n];
+      const kept = companion + sign * after[n];
+      const ejecta = (drift[n] * postMass) / preMass;
+      assert.ok(Math.abs(other * companion + remnant * kept + ejected * ejecta) < 1e-12, `momentum ${sign} ${n}`);
+      near(ejecta - (other * companion + remnant * kept) / postMass, drift[n], 1e-9, `relative to the new barycentre ${sign} ${n}`);
+    }
+  }
 });
 
 test('the hyperbolic Kepler equation is solved', () => {

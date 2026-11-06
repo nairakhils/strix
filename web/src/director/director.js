@@ -29,6 +29,7 @@ import { EASE_FRAMES, HOLD_FRAMES, inside, makePace } from './pace.js';
 import { applyCollapses, collapseEpisodes } from './collapse.js';
 import {
   afterCollapse,
+  ejectaDrift,
   escapeSpeed,
   hyperbolicPosition,
   orbitState,
@@ -631,7 +632,7 @@ export function makeDirector(scene, { log: logScale = false, camera = 'fixed' } 
     const share = preShares[k];
     const site = position.map((x) => sign * share * x);
     const remnant = masses[k][episode.first];
-    const drift = [0, 1].map((n) => sign * (share * velocity[n] * preMass - remnant * (post.velocity[n] - velocity[n])) / postMass);
+    const drift = ejectaDrift({ velocity, after: post.velocity, sign, share, preMass, postMass, remnant, ejected: episode.ejected });
     const separation = Math.hypot(...position);
     const other = 1 - k;
     const shadow = kinds[other][before] === 'star'

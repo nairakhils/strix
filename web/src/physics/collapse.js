@@ -106,6 +106,16 @@ export function escapeSpeed(mass, a) {
   return Math.sqrt((MU_SUN * mass) / Math.abs(a)) * KM_PER_RSUN;
 }
 
+export function ejectaDrift({ velocity, after, sign, share, preMass, postMass, remnant, ejected }) {
+  if (!(ejected > 0)) return [0, 0];
+  return [0, 1].map((n) => {
+    const companion = -sign * (1 - share) * velocity[n];
+    const star = companion + sign * velocity[n];
+    const kept = companion + sign * after[n];
+    return (preMass * ((remnant + ejected) * star - remnant * kept)) / (ejected * postMass);
+  });
+}
+
 export function afterCollapse({ position, velocity, mass, a, e }) {
   const mu = MU_SUN * mass;
   const r = Math.hypot(...position);
