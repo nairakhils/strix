@@ -28,7 +28,7 @@ export function collapseEpisodes(events = []) {
     .sort((p, q) => p.first - q.first);
 }
 
-export function applyCollapses(collapses, { masses, radii, teffs, kinds, types, a, e }) {
+export function applyCollapses(collapses, { masses, a, e, ...held }) {
   const last = masses[0].length - 1;
   for (const episode of collapses) {
     const from = Math.min(episode.last + 1, last);
@@ -36,10 +36,7 @@ export function applyCollapses(collapses, { masses, radii, teffs, kinds, types, 
     for (let n = episode.first; n <= episode.last; n += 1) {
       masses[0][n] = episode.after.m1;
       masses[1][n] = episode.after.m2;
-      radii[k][n] = radii[k][from];
-      teffs[k][n] = teffs[k][from];
-      kinds[k][n] = kinds[k][from];
-      types[k][n] = types[k][from];
+      for (const values of Object.values(held)) values[k][n] = values[k][from];
       a[n] = episode.after.a;
       e[n] = episode.after.e;
     }

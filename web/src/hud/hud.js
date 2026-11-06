@@ -71,6 +71,16 @@ function rateText(rate) {
   return rate >= 0.01 && rate < 1000 ? rate.toPrecision(2) : scientific(rate);
 }
 
+function periodText(seconds) {
+  return seconds < 1 ? `${significant3(seconds * 1000)} ms` : `${significant3(seconds)} s`;
+}
+
+export function pulsarText(pulsars) {
+  return pulsars.flatMap((pulsar, k) => (pulsar
+    ? [`star ${k + 1} pulsar: P = ${periodText(pulsar.period)}, B = ${scientific(pulsar.field)} G`]
+    : []));
+}
+
 export function flowText(flow) {
   if (!flow) return '';
   const rate = `transfer ${rateText(flow.rate)} M☉/yr`;
@@ -326,6 +336,7 @@ function drawReadout(pen, hud) {
     ...collapseText(hud.collapse).map((text) => pen.wrap(text, 560 * unit)),
     ...envelopeText(hud.envelope).map((text) => pen.wrap(text, 560 * unit)),
     [fills.length > 0 ? `Roche fill  ${fills.join(' · ')}` : ''],
+    pulsarText(hud.pulsars),
   ];
   for (const value of blocks.flat()) {
     pen.text(value, left, y + line / 2);

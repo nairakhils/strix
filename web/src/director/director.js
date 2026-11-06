@@ -378,10 +378,12 @@ export function makeDirector(scene, { log: logScale = false, camera = 'fixed' } 
   const teffs = [scaled(columns.teff1, 1, frameCount), scaled(columns.teff2, 1, frameCount)];
   const spins = [columns.spin1, columns.spin2].map((values) => spinRatios(values, frameCount));
   const winds = [columns.wind1 ?? null, columns.wind2 ?? null];
+  const periods = [1, 2].map((k) => Float64Array.from(columns[`period${k}`] ?? new Float64Array(frameCount)));
+  const fields = [1, 2].map((k) => Float64Array.from(columns[`field${k}`] ?? new Float64Array(frameCount)));
   const kinds = [columns.kind1, columns.kind2].map((values) => (values ? Array.from(values) : new Array(frameCount).fill('point')));
   const types = [Array.from(columns.type1 ?? kinds[0]), Array.from(columns.type2 ?? kinds[1])];
   const collapses = collapseEpisodes(header.events);
-  applyCollapses(collapses, { masses, radii, teffs, kinds, types, a, e });
+  applyCollapses(collapses, { masses, a, e, radii, teffs, kinds, types, periods, fields });
   const commons = envelopeEpisodes(header.events);
   const edges = new Uint8Array(frameCount);
   collapses.forEach(({ first }) => {
@@ -1507,6 +1509,9 @@ export function makeDirector(scene, { log: logScale = false, camera = 'fixed' } 
         event: labels[i],
         types: [types[0][i], types[1][i]],
         fills: columns.r1 ? (g.fills ?? [null, null]) : [null, null],
+        pulsars: [0, 1].map((k) => (s.kinds[k] === 'NS' && periods[k][s.i] > 0
+          ? { period: lerp(periods[k], s.i, s.t), field: lerp(fields[k], s.i, s.t) }
+          : null)),
         slowedBy: (blastAt(u)?.weight ?? 0) > 0 || commonAt(u) !== null ? null : slowedBy[interval],
         slowMotion: pace.paceAt(u) * sampleRate > SLOW_NOTE ? pace.paceAt(u) * sampleRate : null,
         paused: paused[interval],

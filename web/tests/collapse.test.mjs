@@ -15,7 +15,7 @@ import {
 } from '../src/physics/collapse.js';
 import { CORE_BREAK, OUTER_SLOPE, ejectaDensity } from '../src/physics/ejecta.js';
 import { AZIMUTH0, BLAST_ZOOM, FIXED_ELEVATION } from '../src/director/director.js';
-import { collapseText, elapsedText, orbitText } from '../src/hud/hud.js';
+import { collapseText, elapsedText, orbitText, pulsarText } from '../src/hud/hud.js';
 import { exampleDirector, exampleScene } from './scenes.mjs';
 
 const DAY = 86400;
@@ -227,4 +227,16 @@ test('time since collapse reads in the largest sensible unit', () => {
   assert.equal(elapsedText(5 * 3600), '5.0 hours');
   assert.equal(elapsedText(40 * DAY), '40 days');
   assert.equal(elapsedText(3 * 365.25 * DAY), '3.0 years');
+});
+
+test('a neutron star reads as a pulsar with its period and field', () => {
+  assert.deepEqual(pulsarText([{ period: 0.0696, field: 1.39e13 }, null]), ['star 1 pulsar: P = 69.6 ms, B = 1.4 × 10¹³ G']);
+  assert.deepEqual(pulsarText([null, { period: 5.6, field: 1.38e13 }]), ['star 2 pulsar: P = 5.60 s, B = 1.4 × 10¹³ G']);
+  assert.deepEqual(pulsarText([null, null]), []);
+  const cinematic = exampleDirector(2);
+  const [first] = collapsesOf(2)[0].during;
+  assert.equal(cinematic.stateAt(first - 1).hud.pulsars[0], null);
+  const born = cinematic.stateAt(first).hud.pulsars[0].period;
+  assert.equal(cinematic.stateAt(first + 20).hud.pulsars[0].period, born);
+  assert.ok(cinematic.stateAt(1600).hud.pulsars[0].period > born, 'spins down');
 });
